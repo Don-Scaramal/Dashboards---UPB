@@ -1,2 +1,6 @@
-# Dashboards---UPB
-Repositório central de dashboards e ferramentas de visualização interativa desenvolvidos no âmbito de projetos académicos e de investigação no Instituto Politécnico de Bragança (IPB).
+# Dashboards - IPB / UPB
+
+Este repositório destina-se ao alojamento, demonstração e partilha de dashboards interativos, ferramentas de visualização de dados e aplicações web desenvolvidas no âmbito dos projetos académicos do Instituto Politécnico de Bragança (IPB).
+
+## 🚀 Objetivo
+Servir como montra técnica (portefólio) para simulações interativas, interfaces de controlo e visualizações aplicadas a sistemas de energia, eletrónica de potência e automação.
