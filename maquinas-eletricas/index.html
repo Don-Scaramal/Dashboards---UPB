@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Campo Magnético Girante - Motor de Indução Trifásico</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #080c14;
+            color: #e2e8f0;
+        }
+
+        .font-mono-code {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Scrollbar customizada */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Efeitos Glow */
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+        }
+
+        /* Styling Range Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: #1e293b;
+            border-radius: 6px;
+            height: 6px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #06b6d4;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.7);
+            transition: all 0.2s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            scale: 1.15;
+            background: #22d3ee;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[#080c14] text-slate-100 antialiased selection:bg-cyan-500 selection:text-black pb-10">
+
+    <!-- Cabeçalho Principal -->
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-cyan-400">
+                    <i data-lucide="cpu" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                        Simulador de Motor de Indução Trifásico
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Nuvem Magnética &amp; Vetores</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Engenharia Eletrotécnica &bull; Campo Girante, Deformação de Fluxo e Indução</p>
+                </div>
+            </div>
+
+            <!-- Badges de Estado -->
+            <div class="flex items-center gap-4 text-xs font-mono-code bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-lg">
+                <div class="flex items-center gap-2">
+                    <span id="status-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-slate-400">Status:</span>
+                    <span id="status-text" class="text-emerald-400 font-medium">Em Operação</span>
+                </div>
+                <div class="h-4 w-px bg-slate-800"></div>
+                <div>
+                    <span class="text-slate-400">Sequência:</span>
+                    <span id="seq-text" class="text-cyan-400 font-medium">Direta (U-V-W)</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 flex flex-col gap-6">
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- COLUNA DA ESQUERDA: Animação e Gráficos Canvas -->
+            <div class="lg:col-span-7 flex flex-col gap-4">
+                
+                <!-- Card do Canvas Principal do Motor -->
+                <div class="relative bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col items-center justify-center p-4 min-h-[460px]">
+                    
+                    <!-- Badge Superior Esquerdo -->
+                    <div class="absolute top-4 left-4 z-10 flex items-center gap-2 bg-slate-950/80 border border-slate-800 px-3 py-1.5 rounded-xl backdrop-blur-sm">
+                        <i data-lucide="eye" class="w-4 h-4 text-cyan-400"></i>
+                        <span class="text-xs font-semibold text-slate-200">Corte Transversal do Motor</span>
+                    </div>
+
+                    <!-- Badge da Velocidade de Animação -->
+                    <div class="absolute top-4 right-4 z-10 flex items-center gap-2 bg-slate-950/80 border border-slate-800 px-3 py-1.5 rounded-xl backdrop-blur-sm font-mono-code text-xs">
+                        <span class="text-slate-400">Velocidade:</span>
+                        <span id="badge-speed" class="text-amber-400 font-bold">1.0x</span>
+                    </div>
+
+                    <!-- Canvas do Motor -->
+                    <canvas id="motorCanvas" width="460" height="460" class="max-w-full h-auto drop-shadow-2xl"></canvas>
+                </div>
+
+                <!-- LINHA DE TRÊS DIAGRAMAS -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    
+                    <!-- Canvas 1: Formas de Onda Trifásicas -->
+                    <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 shadow-xl flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1.5">
+                                <i data-lucide="activity" class="w-3.5 h-3.5 text-cyan-400"></i>
+                                <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-300">Correntes (I<sub>A</sub>, I<sub>B</sub>, I<sub>C</sub>)</h3>
+                            </div>
+                            <span class="text-[9px] text-slate-500 font-mono-code">Domínio do Tempo</span>
+                        </div>
+                        <canvas id="waveCanvas" width="220" height="120" class="w-full h-[120px] rounded-lg bg-slate-950/60 border border-slate-800/80"></canvas>
+                    </div>
+
+                    <!-- Canvas 2: Diagrama Fasorial -->
+                    <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 shadow-xl flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1.5">
+                                <i data-lucide="compass" class="w-3.5 h-3.5 text-purple-400"></i>
+                                <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-300">Diagrama Fasorial</h3>
+                            </div>
+                        </div>
+                        <canvas id="phasorCanvas" width="220" height="120" class="w-full h-[120px] rounded-lg bg-slate-950/60 border border-slate-800/80"></canvas>
+                    </div>
+
+                    <!-- Canvas 3: Nuvem Magnética (e Mostrador de Escorregamento) -->
+                    <div id="container-chart3" class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 shadow-xl flex flex-col gap-2 border-cyan-500/30 transition-colors duration-300">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1.5">
+                                <i id="icon-chart3" data-lucide="waves" class="w-3.5 h-3.5 text-cyan-300"></i>
+                                <h3 id="title-chart3" class="text-[11px] font-bold uppercase tracking-wider text-cyan-300">Nuvem Magnética</h3>
+                            </div>
+                            <button id="btn-toggle-chart3" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-[9px] font-medium text-slate-300 transition-colors flex items-center gap-1 shrink-0">
+                                Mudar Visão <i data-lucide="rotate-cw" class="w-2.5 h-2.5"></i>
+                            </button>
+                        </div>
+                        <canvas id="cloudCanvas" width="220" height="120" class="w-full h-[120px] rounded-lg bg-slate-950/60 border border-slate-800/80"></canvas>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- COLUNA DA DIREITA: Painel de Controlo e Métricas -->
+            <div class="lg:col-span-5 flex flex-col gap-5">
+                
+                <!-- Seletor de Polos por Botões Dedicados (P = 2, 4, 6, 8) -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                            <i data-lucide="layers" class="w-4 h-4 text-purple-400"></i>
+                            Número de Polos Geométricos (P)
+                        </span>
+                        <span id="label-poles" class="text-xs font-mono-code font-bold text-purple-400">P = 4 (p = 2)</span>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-2">
+                        <button id="btn-p2" onclick="setPoles(2)" class="btn-pole p-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold text-slate-300 transition-all flex flex-col items-center">
+                            <span>P = 2</span>
+                            <span class="text-[10px] text-slate-400 font-normal">3000 RPM</span>
+                        </button>
+                        <button id="btn-p4" onclick="setPoles(4)" class="btn-pole p-2.5 bg-purple-600/30 border-2 border-purple-500 rounded-xl text-xs font-bold text-purple-200 transition-all flex flex-col items-center shadow-lg">
+                            <span>P = 4</span>
+                            <span class="text-[10px] text-purple-300 font-normal">1500 RPM</span>
+                        </button>
+                        <button id="btn-p6" onclick="setPoles(6)" class="btn-pole p-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold text-slate-300 transition-all flex flex-col items-center">
+                            <span>P = 6</span>
+                            <span class="text-[10px] text-slate-400 font-normal">1000 RPM</span>
+                        </button>
+                        <button id="btn-p8" onclick="setPoles(8)" class="btn-pole p-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold text-slate-300 transition-all flex flex-col items-center">
+                            <span>P = 8</span>
+                            <span class="text-[10px] text-slate-400 font-normal">750 RPM</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Painel de Métricas em Tempo Real -->
+                <div class="grid grid-cols-2 gap-3">
+                    
+                    <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-400 text-xs">
+                            <span>Velocidade Síncrona (n<sub>s</sub>)</span>
+                            <i data-lucide="gauge" class="w-3.5 h-3.5 text-cyan-400"></i>
+                        </div>
+                        <div class="mt-2 flex items-baseline gap-1">
+                            <span id="metric-ns" class="text-2xl font-bold font-mono-code text-cyan-400">1500</span>
+                            <span class="text-xs text-slate-400">RPM</span>
+                        </div>
+                        <div class="mt-1 text-[11px] text-slate-500 flex justify-between border-t border-slate-800/60 pt-1">
+                            <span>Rotor (n<sub>r</sub>):</span>
+                            <span id="metric-nr" class="font-mono-code text-slate-300 font-semibold">1425 RPM</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-400 text-xs">
+                            <span>Escorregamento (s)</span>
+                            <i data-lucide="percent" class="w-3.5 h-3.5 text-amber-400"></i>
+                        </div>
+                        <div class="mt-2 flex items-baseline gap-1">
+                            <span id="metric-s" class="text-2xl font-bold font-mono-code text-amber-400">5.0</span>
+                            <span class="text-xs text-amber-400/80">%</span>
+                        </div>
+                        <div class="mt-1 text-[11px] text-slate-500 flex justify-between border-t border-slate-800/60 pt-1">
+                            <span>Freq. Escorregamento (f<sub>sl</sub>):</span>
+                            <span id="metric-fsl" class="font-mono-code text-slate-300 font-semibold">2.5 Hz</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-400 text-xs">
+                            <span>Fluxo Resultante (|B<sub>res</sub>|)</span>
+                            <i data-lucide="zap" class="w-3.5 h-3.5 text-emerald-400"></i>
+                        </div>
+                        <div class="mt-2 flex items-baseline gap-1">
+                            <span id="metric-bmag" class="text-2xl font-bold font-mono-code text-emerald-400">1.50</span>
+                            <span class="text-xs text-slate-400">T (rel)</span>
+                        </div>
+                        <div class="mt-1 text-[11px] text-slate-500 border-t border-slate-800/60 pt-1 truncate">
+                            <span>1.5 &times; B<sub>m</sub> (Amplitude constante)</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-slate-400 text-xs">
+                            <span>Binário Eletromagnético (T<sub>e</sub>)</span>
+                            <i data-lucide="anchor" class="w-3.5 h-3.5 text-red-400"></i>
+                        </div>
+                        <div class="mt-2 flex items-baseline gap-1">
+                            <span id="metric-torque" class="text-2xl font-bold font-mono-code text-red-400">12.5</span>
+                            <span class="text-xs text-slate-400">N&middot;m</span>
+                        </div>
+                        <div class="mt-1 text-[11px] text-slate-500 border-t border-slate-800/60 pt-1 truncate">
+                            <span>T<sub>e</sub> &propto; B<sub>stator</sub> &middot; I<sub>rotor</sub></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Painel de Controlos Deslizantes -->
+                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col gap-4">
+                    
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+                            <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i>
+                            Controlo dos Parâmetros de Entrada
+                        </h2>
+                        <button id="btn-reset" class="text-xs text-slate-400 hover:text-cyan-400 transition-colors flex items-center gap-1">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                            Restaurar
+                        </button>
+                    </div>
+
+                    <div class="flex flex-col gap-3">
+                        
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between items-center text-xs">
+                                <label for="slider-voltage" class="font-medium text-slate-300 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                                    Tensão de Alimentação (V)
+                                </label>
+                                <span id="val-voltage" class="font-mono-code text-cyan-400 font-semibold">100% (230V)</span>
+                            </div>
+                            <input type="range" id="slider-voltage" min="20" max="150" value="100" class="w-full">
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between items-center text-xs">
+                                <label for="slider-freq" class="font-medium text-slate-300 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                    Frequência da Rede (f)
+                                </label>
+                                <span id="val-freq" class="font-mono-code text-emerald-400 font-semibold">50.0 Hz</span>
+                            </div>
+                            <input type="range" id="slider-freq" min="10" max="100" value="50" step="1" class="w-full">
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between items-center text-xs">
+                                <label for="slider-load" class="font-medium text-slate-300 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-red-400"></span>
+                                    Carga Mecânica no Eixo (T<sub>L</sub>)
+                                </label>
+                                <span id="val-load" class="font-mono-code text-red-400 font-semibold">12.5 N&middot;m</span>
+                            </div>
+                            <input type="range" id="slider-load" min="0" max="30" value="12.5" step="0.5" class="w-full">
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between items-center text-xs">
+                                <label for="slider-slip" class="font-medium text-slate-300 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                                    Escorregamento Resultante (s)
+                                </label>
+                                <span id="val-slip" class="font-mono-code text-amber-400 font-semibold">5.0%</span>
+                            </div>
+                            <input type="range" id="slider-slip" min="0" max="30" value="5" step="0.5" class="w-full">
+                        </div>
+
+                        <div class="flex flex-col gap-1 pt-2 border-t border-slate-800">
+                            <div class="flex justify-between items-center text-xs">
+                                <label for="slider-speed" class="font-medium text-slate-300 flex items-center gap-1.5">
+                                    <i data-lucide="gauge" class="w-3.5 h-3.5 text-amber-400"></i>
+                                    Velocidade da Animação
+                                </label>
+                                <span id="val-speed" class="font-mono-code text-amber-400 font-semibold">1.0x</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button id="btn-slow-mo" class="px-2 py-1 bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg transition-colors text-xs font-bold flex items-center gap-1 shrink-0">
+                                    <i data-lucide="turtle" class="w-3 h-3"></i>
+                                    0.2x Câmera Lenta
+                                </button>
+                                <input type="range" id="slider-speed" min="0.05" max="2.0" value="1.0" step="0.05" class="flex-1">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="flex flex-col gap-2 pt-2 border-t border-slate-800">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ativação de Fluxos e Setas de Força</span>
+                        
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <label class="flex items-center gap-2 p-2 bg-slate-950/60 rounded-lg border border-slate-800 cursor-pointer hover:bg-slate-800/50 transition-colors">
+                                <input type="checkbox" id="chk-stator-flux" checked class="rounded border-slate-700 text-cyan-500 focus:ring-cyan-500/20 bg-slate-900">
+                                <span class="text-cyan-300 font-medium">Fluxo Estator (B<sub>stator</sub>)</span>
+                            </label>
+
+                            <label class="flex items-center gap-2 p-2 bg-slate-950/60 rounded-lg border border-slate-800 cursor-pointer hover:bg-slate-800/50 transition-colors">
+                                <input type="checkbox" id="chk-rotor-flux" checked class="rounded border-slate-700 text-amber-500 focus:ring-amber-500/20 bg-slate-900">
+                                <span class="text-amber-300 font-medium">Fluxo Rotor (B<sub>rotor</sub>)</span>
+                            </label>
+
+                            <label class="flex items-center gap-2 p-2 bg-slate-950/60 rounded-lg border border-slate-800 cursor-pointer hover:bg-slate-800/50 transition-colors">
+                                <input type="checkbox" id="chk-vectors" checked class="rounded border-slate-700 text-cyan-500 focus:ring-cyan-500/20 bg-slate-900">
+                                <span class="text-slate-300">Setas de Força &amp; Fasores</span>
+                            </label>
+
+                            <label class="flex items-center gap-2 p-2 bg-slate-950/60 rounded-lg border border-slate-800 cursor-pointer hover:bg-slate-800/50 transition-colors">
+                                <input type="checkbox" id="chk-particles" checked class="rounded border-slate-700 text-cyan-500 focus:ring-cyan-500/20 bg-slate-900">
+                                <span class="text-slate-300">Partículas em Movimento</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800">
+                        <button id="btn-phase-reverse" class="flex items-center justify-center gap-2 px-3 py-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-slate-700 rounded-xl font-medium text-xs transition-all shadow-md">
+                            <i data-lucide="refresh-cw" class="w-4 h-4 text-cyan-400"></i>
+                            <span>Inverter Fases (V &leftrightarrow; W)</span>
+                        </button>
+
+                        <button id="btn-play-pause" class="flex items-center justify-center gap-2 px-3 py-2.5 bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-lg glow-cyan">
+                            <i data-lucide="pause" id="icon-play-pause" class="w-4 h-4"></i>
+                            <span id="text-play-pause">Pausar</span>
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <!-- SEÇÃO INFERIOR: Legenda Técnica dos Componentes -->
+        <section class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-2xl flex flex-col gap-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+                    <i data-lucide="info" class="w-4 h-4 text-cyan-400"></i>
+                    Legenda Explicativa dos Componentes da Animação
+                </h2>
+                <span class="text-xs text-slate-400">Identificação Teórica &amp; Eletrotécnica</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+                
+                <div class="flex items-start gap-3 p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                    <span class="w-4 h-4 rounded-full bg-slate-700 border border-slate-500 shrink-0 mt-0.5"></span>
+                    <div>
+                        <h4 class="font-bold text-slate-200">1. Estator (Carcaça Fixo)</h4>
+                        <p class="text-slate-400 mt-0.5">Núcleo de chapas de aço laminado com ranhuras onde se alojam os enrolamentos trifásicos dos polos P.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3 p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                    <div class="flex gap-1 shrink-0 mt-0.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-200">2. Enrolamentos (Fases U, V, W)</h4>
+                        <p class="text-slate-400 mt-0.5">Bobinas distribuídas espacialmente segundo os pares de polos p. O ponto (&bull;) indica corrente a sair; a cruz (&times;) indica corrente a entrar.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3 p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                    <span class="w-4 h-4 rounded-full bg-cyan-500/80 border border-cyan-300 shrink-0 mt-0.5"></span>
+                    <div>
+                        <h4 class="font-bold text-cyan-300">3. Campo Girante do Estator (B<sub>stator</sub>)</h4>
+                        <p class="text-slate-400 mt-0.5">Setas azuis-ciano dinâmicas e linhas de fluxo a rodar à velocidade de sincronismo n<sub>s</sub> = 120&middot;f / P.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3 p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                    <span class="w-4 h-4 rounded-full bg-amber-500/80 border border-amber-300 shrink-0 mt-0.5"></span>
+                    <div>
+                        <h4 class="font-bold text-amber-300">4. Campo Induzido no Rotor (Indução Mútua)</h4>
+                        <p class="text-slate-400 mt-0.5">Setas amarelas/âmbar criadas pelas correntes induzidas nas barras do rotor. A sua intensidade cresce com o escorregamento s e a carga T<sub>L</sub>.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3 p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                    <span class="w-4 h-4 rounded-full bg-amber-600/50 border border-amber-400 shrink-0 mt-0.5"></span>
+                    <div>
+                        <h4 class="font-bold text-slate-200">5. Rotor de Gaiola de Esquilo</h4>
+                        <p class="text-slate-400 mt-0.5">Barras condutoras de alumínio/cobre curto-circuitadas que rodam à velocidade mecânica n<sub>r</sub> = n<sub>s</sub>(1-s).</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3 p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                    <span class="w-4 h-4 rounded bg-cyan-400/30 border border-cyan-300 shrink-0 mt-0.5"></span>
+                    <div>
+                        <h4 class="font-bold text-cyan-300">6. Nuvem Magnética (Envelope Pulsátil)</h4>
+                        <p class="text-slate-400 mt-0.5">Forma orgânica elástica que ilustra a intensidade contínua do fluxo espacial no entreferro.</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Lógica JavaScript -->
+    <script>
+        lucide.createIcons();
+
+        const motorCanvas = document.getElementById('motorCanvas');
+        const mCtx = motorCanvas.getContext('2d');
+        const waveCanvas = document.getElementById('waveCanvas');
+        const wCtx = waveCanvas.getContext('2d');
+        const phasorCanvas = document.getElementById('phasorCanvas');
+        const pCtx = phasorCanvas.getContext('2d');
+        const cloudCanvas = document.getElementById('cloudCanvas');
+        const cCtx = cloudCanvas.getContext('2d');
+
+        let isRunning = true;
+        let time = 0;
+        let phaseSequence = 1; 
+        
+        let poles = 4;
+        let voltagePercent = 100;
+        let frequency = 50; 
+        let loadTorque = 12.5; 
+        let slipPercent = 5.0; 
+        let simSpeed = 1.0; 
+        let activeChart3 = 'cloud'; 
+
+        let showStatorFlux = true;
+        let showRotorFlux = true;
+        let showVectors = true;
+        let showParticles = true;
+
+        const numParticles = 30;
+        const particlesStator = Array.from({ length: numParticles }, () => ({ r: 55 + Math.random() * 75, angleOffset: Math.random() * Math.PI * 2, speedFactor: 0.8 + Math.random() * 0.4 }));
+        const particlesRotor = Array.from({ length: numParticles }, () => ({ r: 35 + Math.random() * 65, angleOffset: Math.random() * Math.PI * 2, speedFactor: 0.8 + Math.random() * 0.4 }));
+
+        const sliderVoltage = document.getElementById('slider-voltage');
+        const valVoltage = document.getElementById('val-voltage');
+        const sliderFreq = document.getElementById('slider-freq');
+        const valFreq = document.getElementById('val-freq');
+        const sliderLoad = document.getElementById('slider-load');
+        const valLoad = document.getElementById('val-load');
+        const sliderSlip = document.getElementById('slider-slip');
+        const valSlip = document.getElementById('val-slip');
+        const sliderSpeed = document.getElementById('slider-speed');
+        const valSpeed = document.getElementById('val-speed');
+        const badgeSpeed = document.getElementById('badge-speed');
+
+        const chkStatorFlux = document.getElementById('chk-stator-flux');
+        const chkRotorFlux = document.getElementById('chk-rotor-flux');
+        const chkVectors = document.getElementById('chk-vectors');
+        const chkParticles = document.getElementById('chk-particles');
+
+        const btnPlayPause = document.getElementById('btn-play-pause');
+        const textPlayPause = document.getElementById('text-play-pause');
+        const btnPhaseReverse = document.getElementById('btn-phase-reverse');
+        const btnSlowMo = document.getElementById('btn-slow-mo');
+        const btnReset = document.getElementById('btn-reset');
+        
+        const btnToggleChart3 = document.getElementById('btn-toggle-chart3');
+        const iconChart3 = document.getElementById('icon-chart3');
+        const titleChart3 = document.getElementById('title-chart3');
+        const containerChart3 = document.getElementById('container-chart3');
+
+        const labelPoles = document.getElementById('label-poles');
+        const metricNs = document.getElementById('metric-ns');
+        const metricNr = document.getElementById('metric-nr');
+        const metricS = document.getElementById('metric-s');
+        const metricFsl = document.getElementById('metric-fsl');
+        const metricBmag = document.getElementById('metric-bmag');
+        const metricTorque = document.getElementById('metric-torque');
+        const seqText = document.getElementById('seq-text');
+        const statusText = document.getElementById('status-text');
+        const statusDot = document.getElementById('status-dot');
+
+        function setPoles(pVal) {
+            poles = pVal;
+            labelPoles.textContent = `P = ${poles} (p = ${poles/2})`;
+            [2, 4, 6, 8].forEach(p => {
+                const btn = document.getElementById(`btn-p${p}`);
+                if (p === poles) btn.className = "btn-pole p-2.5 bg-purple-600/30 border-2 border-purple-500 rounded-xl text-xs font-bold text-purple-200 transition-all flex flex-col items-center shadow-lg";
+                else btn.className = "btn-pole p-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold text-slate-300 transition-all flex flex-col items-center";
+            });
+            updateStateFromInputs();
+        }
+
+        function updateStateFromInputs() {
+            voltagePercent = parseFloat(sliderVoltage.value);
+            frequency = parseFloat(sliderFreq.value);
+            loadTorque = parseFloat(sliderLoad.value);
+            slipPercent = parseFloat(sliderSlip.value);
+            simSpeed = parseFloat(sliderSpeed.value);
+
+            showStatorFlux = chkStatorFlux.checked;
+            showRotorFlux = chkRotorFlux.checked;
+            showVectors = chkVectors.checked;
+            showParticles = chkParticles.checked;
+
+            valVoltage.textContent = `${voltagePercent}% (${Math.round(230 * (voltagePercent/100))}V)`;
+            valFreq.textContent = `${frequency.toFixed(1)} Hz`;
+            valLoad.textContent = `${loadTorque.toFixed(1)} N·m`;
+            valSlip.textContent = `${slipPercent.toFixed(1)}%`;
+            valSpeed.textContent = `${simSpeed.toFixed(2)}x`;
+            badgeSpeed.textContent = `${simSpeed.toFixed(2)}x`;
+
+            const ns = (120 * frequency) / poles;
+            const s = slipPercent / 100;
+            const nr = ns * (1 - s);
+            const fsl = s * frequency;
+            const bMag = (1.5 * (voltagePercent / 100)).toFixed(2);
+
+            metricNs.textContent = Math.round(ns);
+            metricNr.textContent = `${Math.round(nr)} RPM`;
+            metricS.textContent = slipPercent.toFixed(1);
+            metricFsl.textContent = `${fsl.toFixed(1)} Hz`;
+            metricBmag.textContent = bMag;
+            metricTorque.textContent = loadTorque.toFixed(1);
+        }
+
+        sliderVoltage.addEventListener('input', updateStateFromInputs);
+        sliderFreq.addEventListener('input', updateStateFromInputs);
+        sliderLoad.addEventListener('input', () => { sliderSlip.value = Math.min(30, Math.max(0.5, (parseFloat(sliderLoad.value) / 25) * 10)).toFixed(1); updateStateFromInputs(); });
+        sliderSlip.addEventListener('input', () => { sliderLoad.value = ((parseFloat(sliderSlip.value) / 10) * 25).toFixed(1); updateStateFromInputs(); });
+        sliderSpeed.addEventListener('input', updateStateFromInputs);
+
+        chkStatorFlux.addEventListener('change', updateStateFromInputs);
+        chkRotorFlux.addEventListener('change', updateStateFromInputs);
+        chkVectors.addEventListener('change', updateStateFromInputs);
+        chkParticles.addEventListener('change', updateStateFromInputs);
+
+        btnSlowMo.onclick = () => { sliderSpeed.value = 0.2; updateStateFromInputs(); };
+        
+        btnToggleChart3.onclick = () => {
+            if (activeChart3 === 'cloud') {
+                activeChart3 = 'slip';
+                titleChart3.innerHTML = 'Mostrador Escorreg.';
+                titleChart3.className = 'text-[11px] font-bold uppercase tracking-wider text-amber-400';
+                iconChart3.setAttribute('data-lucide', 'gauge');
+                iconChart3.className = 'w-3.5 h-3.5 text-amber-400';
+                containerChart3.className = 'bg-slate-900/80 border border-slate-800 rounded-2xl p-3 shadow-xl flex flex-col gap-2 border-amber-500/30 transition-colors duration-300';
+            } else {
+                activeChart3 = 'cloud';
+                titleChart3.innerHTML = 'Nuvem Magnética';
+                titleChart3.className = 'text-[11px] font-bold uppercase tracking-wider text-cyan-300';
+                iconChart3.setAttribute('data-lucide', 'waves');
+                iconChart3.className = 'w-3.5 h-3.5 text-cyan-300';
+                containerChart3.className = 'bg-slate-900/80 border border-slate-800 rounded-2xl p-3 shadow-xl flex flex-col gap-2 border-cyan-500/30 transition-colors duration-300';
+            }
+            lucide.createIcons();
+        };
+
+        btnPlayPause.onclick = () => {
+            isRunning = !isRunning;
+            if (isRunning) {
+                textPlayPause.textContent = "Pausar";
+                btnPlayPause.className = "flex items-center justify-center gap-2 px-3 py-2.5 bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-lg glow-cyan";
+                statusText.textContent = "Em Operação"; statusText.className = "text-emerald-400 font-medium"; statusDot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+            } else {
+                textPlayPause.textContent = "Continuar";
+                btnPlayPause.className = "flex items-center justify-center gap-2 px-3 py-2.5 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-lg";
+                statusText.textContent = "Em Pausa"; statusText.className = "text-amber-400 font-medium"; statusDot.className = "w-2 h-2 rounded-full bg-amber-500";
+            }
+        };
+
+        btnPhaseReverse.onclick = () => {
+            phaseSequence *= -1;
+            if (phaseSequence === 1) { seqText.textContent = "Direta (U-V-W)"; seqText.className = "text-cyan-400 font-medium"; }
+            else { seqText.textContent = "Inversa (U-W-V)"; seqText.className = "text-purple-400 font-medium"; }
+        };
+
+        btnReset.onclick = () => {
+            sliderVoltage.value = 100; sliderFreq.value = 50; sliderLoad.value = 12.5; sliderSlip.value = 5; sliderSpeed.value = 1.0; phaseSequence = 1;
+            seqText.textContent = "Direta (U-V-W)"; seqText.className = "text-cyan-400 font-medium";
+            chkStatorFlux.checked = true; chkRotorFlux.checked = true; chkVectors.checked = true; chkParticles.checked = true;
+            setPoles(4);
+        };
+
+        updateStateFromInputs();
+
+        function drawMotor() {
+            const width = motorCanvas.width, height = motorCanvas.height, centerX = width / 2, centerY = height / 2;
+            mCtx.clearRect(0, 0, width, height);
+
+            const outerStatorR = 210, innerStatorR = 145, outerRotorR = 133, shaftR = 24;
+            const omega_e = 2 * Math.PI * frequency * 0.04, theta_e = phaseSequence * omega_e * time;
+            const V_gain = voltagePercent / 100, i_A = V_gain * Math.cos(theta_e), i_B = V_gain * Math.cos(theta_e - (2 * Math.PI / 3) * phaseSequence), i_C = V_gain * Math.cos(theta_e - (4 * Math.PI / 3) * phaseSequence);
+            const s = slipPercent / 100, polePairs = poles / 2, theta_r = (theta_e / polePairs) * (1 - s), theta_sl = theta_e * s;
+
+            mCtx.save(); mCtx.translate(centerX, centerY);
+
+            const gradStator = mCtx.createRadialGradient(0, 0, innerStatorR, 0, 0, outerStatorR);
+            gradStator.addColorStop(0, '#1e293b'); gradStator.addColorStop(1, '#0f172a');
+            mCtx.beginPath(); mCtx.arc(0, 0, outerStatorR, 0, 2 * Math.PI); mCtx.arc(0, 0, innerStatorR, 0, 2 * Math.PI, true);
+            mCtx.fillStyle = gradStator; mCtx.fill(); mCtx.strokeStyle = '#334155'; mCtx.lineWidth = 3; mCtx.stroke();
+
+            const totalCoils = poles * 3;
+            for (let c = 0; c < totalCoils; c++) {
+                const angle = (c * 2 * Math.PI) / totalCoils, phaseIdx = c % 3;
+                let val = i_A, color = '#ef4444';
+                if (phaseIdx === 1) { val = i_B; color = '#22c55e'; } else if (phaseIdx === 2) { val = i_C; color = '#3b82f6'; }
+                const cX = (innerStatorR + 15) * Math.cos(angle), cY = (innerStatorR + 15) * Math.sin(angle), absVal = Math.abs(val);
+
+                mCtx.beginPath(); mCtx.arc(cX, cY, 8.5, 0, 2 * Math.PI); mCtx.fillStyle = color; mCtx.globalAlpha = 0.3 + 0.7 * absVal; mCtx.fill(); mCtx.globalAlpha = 1.0; mCtx.strokeStyle = '#ffffff'; mCtx.lineWidth = 1; mCtx.stroke();
+                mCtx.fillStyle = '#ffffff'; mCtx.font = 'bold 10px sans-serif'; mCtx.textAlign = 'center'; mCtx.textBaseline = 'middle';
+                const symbol = (val * Math.cos(angle * polePairs)) >= 0 ? '•' : '×'; mCtx.fillText(symbol, cX, cY);
+            }
+
+            if (showStatorFlux) {
+                mCtx.save(); mCtx.rotate(theta_e / polePairs);
+                for (let a = 0; a < poles * 2; a++) {
+                    const arrowAngle = (a * 2 * Math.PI) / (poles * 2);
+                    const arrowLength = (38 + 22 * Math.sin(arrowAngle * polePairs)) * V_gain;
+                    drawArrow(mCtx, (innerStatorR - 5) * Math.cos(arrowAngle), (innerStatorR - 5) * Math.sin(arrowAngle), (innerStatorR - 5 - arrowLength) * Math.cos(arrowAngle), (innerStatorR - 5 - arrowLength) * Math.sin(arrowAngle), '#06b6d4', 2.5, true);
+                }
+                if (showParticles) {
+                    particlesStator.forEach(p => {
+                        const posX = ((time * 120 * p.speedFactor + p.angleOffset * 50) % (innerStatorR * 2)) - innerStatorR, posY = Math.sin(p.angleOffset) * (outerRotorR - 20);
+                        mCtx.beginPath(); mCtx.arc(posX, posY, 2.5, 0, 2 * Math.PI); mCtx.fillStyle = '#22d3ee'; mCtx.shadowColor = '#06b6d4'; mCtx.shadowBlur = 6; mCtx.globalAlpha = 0.8; mCtx.fill(); mCtx.shadowBlur = 0;
+                    });
+                }
+                mCtx.restore();
+            }
+
+            if (showRotorFlux) {
+                mCtx.save(); mCtx.rotate(theta_r + (theta_sl / polePairs));
+                for (let r = 0; r < 8; r++) {
+                    const rAngle = (r * 2 * Math.PI) / 8, rLength = (18 + 18 * Math.cos(rAngle * polePairs)) * V_gain * (s * 5);
+                    if (rLength > 4) drawArrow(mCtx, (outerRotorR - 25) * Math.cos(rAngle), (outerRotorR - 25) * Math.sin(rAngle), (outerRotorR - 25 + rLength) * Math.cos(rAngle), (outerRotorR - 25 + rLength) * Math.sin(rAngle), '#f59e0b', 2.0, true);
+                }
+                if (showParticles) {
+                    particlesRotor.forEach(p => {
+                        const posX = ((time * 80 * p.speedFactor + p.angleOffset * 40) % (outerRotorR * 2)) - outerRotorR, posY = Math.cos(p.angleOffset) * (outerRotorR - 35);
+                        mCtx.beginPath(); mCtx.arc(posX, posY, 2.0, 0, 2 * Math.PI); mCtx.fillStyle = '#fbbf24'; mCtx.shadowColor = '#f59e0b'; mCtx.shadowBlur = 5; mCtx.globalAlpha = 0.85; mCtx.fill(); mCtx.shadowBlur = 0;
+                    });
+                }
+                mCtx.restore();
+            }
+
+            mCtx.save(); mCtx.rotate(theta_r);
+            const gradRotor = mCtx.createRadialGradient(0, 0, shaftR, 0, 0, outerRotorR);
+            gradRotor.addColorStop(0, '#334155'); gradRotor.addColorStop(1, '#1e293b');
+            mCtx.beginPath(); mCtx.arc(0, 0, outerRotorR, 0, 2 * Math.PI); mCtx.fillStyle = gradRotor; mCtx.fill(); mCtx.strokeStyle = '#06b6d4'; mCtx.lineWidth = 2; mCtx.stroke();
+            for (let i = 0; i < 24; i++) {
+                const barAngle = (i * 2 * Math.PI) / 24, bX = (outerRotorR - 12) * Math.cos(barAngle), bY = (outerRotorR - 12) * Math.sin(barAngle);
+                mCtx.beginPath(); mCtx.arc(bX, bY, 4.0, 0, 2 * Math.PI); mCtx.fillStyle = '#fbbf24'; mCtx.fill(); mCtx.strokeStyle = '#78350f'; mCtx.lineWidth = 1; mCtx.stroke();
+            }
+            mCtx.beginPath(); mCtx.arc(0, 0, shaftR, 0, 2 * Math.PI); mCtx.fillStyle = '#64748b'; mCtx.fill(); mCtx.strokeStyle = '#94a3b8'; mCtx.lineWidth = 2; mCtx.stroke();
+            mCtx.fillStyle = '#0f172a'; mCtx.fillRect(-4, -shaftR + 2, 8, 8);
+            mCtx.restore();
+
+            if (showVectors) {
+                const vecScale = 80 * V_gain, dirA = 0, dirB = (2 * Math.PI / 3) * phaseSequence, dirC = (4 * Math.PI / 3) * phaseSequence;
+                drawArrow(mCtx, 0, 0, i_A * vecScale * Math.cos(dirA), i_A * vecScale * Math.sin(dirA), '#ef4444', 1.8);
+                drawArrow(mCtx, 0, 0, i_B * vecScale * Math.cos(dirB), i_B * vecScale * Math.sin(dirB), '#22c55e', 1.8);
+                drawArrow(mCtx, 0, 0, i_C * vecScale * Math.cos(dirC), i_C * vecScale * Math.sin(dirC), '#3b82f6', 1.8);
+                const B_res_X = (i_A * Math.cos(dirA) + i_B * Math.cos(dirB) + i_C * Math.cos(dirC)) * vecScale, B_res_Y = (i_A * Math.sin(dirA) + i_B * Math.sin(dirB) + i_C * Math.sin(dirC)) * vecScale;
+                drawArrow(mCtx, 0, 0, B_res_X, B_res_Y, '#22d3ee', 3.8, true);
+            }
+            mCtx.restore();
+        }
+
+        function drawArrow(ctx, fromx, fromy, tox, toy, color, width, glow = false) {
+            const headlen = 9, dx = tox - fromx, dy = toy - fromy, angle = Math.atan2(dy, dx);
+            if (Math.hypot(dx, dy) < 4) return;
+            ctx.save();
+            if (glow) { ctx.shadowColor = color; ctx.shadowBlur = 10; }
+            ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width;
+            ctx.beginPath(); ctx.moveTo(fromx, fromy); ctx.lineTo(tox, toy); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(tox, toy); ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6)); ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6)); ctx.lineTo(tox, toy); ctx.fill();
+            ctx.restore();
+        }
+
+        function drawWaveforms() {
+            const w = waveCanvas.width, h = waveCanvas.height, centerY = h / 2; wCtx.clearRect(0, 0, w, h);
+            wCtx.strokeStyle = '#1e293b'; wCtx.lineWidth = 1; wCtx.beginPath(); wCtx.moveTo(0, centerY); wCtx.lineTo(w, centerY); wCtx.stroke();
+            const omega_e = 2 * Math.PI * frequency * 0.04, theta_e = phaseSequence * omega_e * time, V_gain = voltagePercent / 100, amplitude = (h / 2 - 12) * V_gain;
+            const phases = [{ color: '#ef4444', shift: 0 }, { color: '#22c55e', shift: (2 * Math.PI / 3) * phaseSequence }, { color: '#3b82f6', shift: (4 * Math.PI / 3) * phaseSequence }];
+            phases.forEach(phase => {
+                wCtx.beginPath(); wCtx.strokeStyle = phase.color; wCtx.lineWidth = 2;
+                for (let x = 0; x < w; x++) {
+                    const t_x = theta_e - (w - x) * 0.035, y = centerY - amplitude * Math.cos(t_x - phase.shift);
+                    if (x === 0) wCtx.moveTo(x, y); else wCtx.lineTo(x, y);
+                }
+                wCtx.stroke();
+            });
+            wCtx.strokeStyle = '#ffffff'; wCtx.lineWidth = 1.5; wCtx.setLineDash([3, 3]); wCtx.beginPath(); wCtx.moveTo(w - 2, 0); wCtx.lineTo(w - 2, h); wCtx.stroke(); wCtx.setLineDash([]);
+        }
+
+        function drawPhasors() {
+            const w = phasorCanvas.width, h = phasorCanvas.height, cX = w / 2, cY = h / 2; pCtx.clearRect(0, 0, w, h);
+            pCtx.strokeStyle = '#1e293b'; pCtx.lineWidth = 1; pCtx.beginPath(); pCtx.arc(cX, cY, 32, 0, 2 * Math.PI); pCtx.stroke();
+            const omega_e = 2 * Math.PI * frequency * 0.04, theta_e = phaseSequence * omega_e * time, V_gain = voltagePercent / 100, r = 32 * V_gain;
+            drawArrow(pCtx, cX, cY, cX + r * Math.cos(theta_e), cY + r * Math.sin(theta_e), '#ef4444', 2);
+            drawArrow(pCtx, cX, cY, cX + r * Math.cos(theta_e - (2*Math.PI/3)*phaseSequence), cY + r * Math.sin(theta_e - (2*Math.PI/3)*phaseSequence), '#22c55e', 2);
+            drawArrow(pCtx, cX, cY, cX + r * Math.cos(theta_e - (4*Math.PI/3)*phaseSequence), cY + r * Math.sin(theta_e - (4*Math.PI/3)*phaseSequence), '#3b82f6', 2);
+            drawArrow(pCtx, cX, cY, cX + (r * 1.15) * Math.cos(theta_e), cY + (r * 1.15) * Math.sin(theta_e), '#22d3ee', 3, true);
+        }
+
+        function drawChart3() {
+            const w = cloudCanvas.width, h = cloudCanvas.height, cX = w / 2, cY = h / 2; cCtx.clearRect(0, 0, w, h);
+            const omega_e = 2 * Math.PI * frequency * 0.04, theta_e = phaseSequence * omega_e * time, V_gain = voltagePercent / 100, polePairs = poles / 2;
+
+            if (activeChart3 === 'cloud') {
+                const baseRadius = 24, maxStretch = 20 * V_gain;
+                cCtx.save(); cCtx.translate(cX, cY);
+                cCtx.strokeStyle = '#1e293b'; cCtx.lineWidth = 1; cCtx.beginPath(); cCtx.arc(0, 0, baseRadius - 6, 0, 2 * Math.PI); cCtx.stroke();
+                
+                cCtx.beginPath();
+                for (let i = 0; i <= 120; i++) {
+                    const angle = (i * 2 * Math.PI) / 120, B_spatial = Math.cos(angle * polePairs - theta_e), r_dynamic = baseRadius + Math.abs(B_spatial) * maxStretch;
+                    const x = r_dynamic * Math.cos(angle), y = r_dynamic * Math.sin(angle);
+                    if (i === 0) cCtx.moveTo(x, y); else cCtx.lineTo(x, y);
+                }
+                cCtx.closePath();
+                const cloudGrad = cCtx.createRadialGradient(0, 0, 5, 0, 0, baseRadius + maxStretch);
+                cloudGrad.addColorStop(0, 'rgba(6, 182, 212, 0.15)'); cloudGrad.addColorStop(0.6, 'rgba(34, 211, 238, 0.4)'); cloudGrad.addColorStop(1, 'rgba(6, 182, 212, 0.8)');
+                cCtx.fillStyle = cloudGrad; cCtx.shadowColor = '#06b6d4'; cCtx.shadowBlur = 12; cCtx.fill();
+                cCtx.strokeStyle = '#22d3ee'; cCtx.lineWidth = 2; cCtx.stroke(); cCtx.shadowBlur = 0;
+                
+                const peakAngle = theta_e / polePairs;
+                cCtx.beginPath(); cCtx.moveTo(0, 0); cCtx.lineTo((baseRadius + maxStretch + 5) * Math.cos(peakAngle), (baseRadius + maxStretch + 5) * Math.sin(peakAngle));
+                cCtx.strokeStyle = '#ffffff'; cCtx.lineWidth = 1.5; cCtx.setLineDash([2, 2]); cCtx.stroke(); cCtx.setLineDash([]);
+                cCtx.restore();
+            } else {
+                const s = slipPercent / 100, theta_r = (theta_e / polePairs) * (1 - s);
+                cCtx.save();
+                cCtx.beginPath(); cCtx.arc(cX, cY, 36, 0, Math.PI * 2); cCtx.strokeStyle = '#1e293b'; cCtx.lineWidth = 6; cCtx.stroke();
+                
+                if (s > 0) {
+                    cCtx.beginPath();
+                    if (phaseSequence === 1) cCtx.arc(cX, cY, 36, theta_r, theta_e / polePairs, false);
+                    else cCtx.arc(cX, cY, 36, theta_e / polePairs, theta_r, false);
+                    cCtx.strokeStyle = 'rgba(245, 158, 11, 0.3)'; cCtx.lineWidth = 6; cCtx.stroke();
+                }
+
+                drawArrow(cCtx, cX, cY, cX + 44 * Math.cos(theta_e / polePairs), cY + 44 * Math.sin(theta_e / polePairs), '#06b6d4', 2.5, true);
+                drawArrow(cCtx, cX, cY, cX + 32 * Math.cos(theta_r), cY + 32 * Math.sin(theta_r), '#f59e0b', 2.5, true);
+                
+                cCtx.fillStyle = '#e2e8f0'; cCtx.font = 'bold 10px "JetBrains Mono", monospace'; cCtx.textAlign = 'center'; cCtx.textBaseline = 'middle';
+                cCtx.fillText('s=' + (s * 100).toFixed(1) + '%', cX, cY);
+                cCtx.restore();
+            }
+        }
+
+        function animate() {
+            if (isRunning) { time += 0.016 * simSpeed; }
+            drawMotor(); drawWaveforms(); drawPhasors(); drawChart3();
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
+</html>
