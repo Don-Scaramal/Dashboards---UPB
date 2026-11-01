@@ -1,0 +1,1487 @@
+
+<Simulador de Controlo de Velocidade em Malha Fechada VoltsHz e Regulação de Escorregamento>
+<html lang="pt" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Controlo de Velocidade em Malha Fechada Volts/Hz e Regulação de Escorregamento</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#f0f9ff', 500: '#0284c7', 600: '#0369a1', 900: '#0c4a6e' }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        code, .font-mono { font-family: 'JetBrains Mono', monospace; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); }
+        .dark ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 3px; }
+        .dark ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
+        svg { pointer-events: none; } 
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-200 min-h-screen flex flex-col">
+
+    <!-- Cabeçalho -->
+    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-sky-500/10 text-sky-500 rounded-lg">
+                    <i data-lucide="cpu" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight text-slate-900 dark:text-white">Controlo V/f em Malha Fechada</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Motor 2,2 kW · 4 polos · 60 Hz · 220 V</p>
+                </div>
+            </div>
+
+            <!-- Barra de Ações -->
+            <div class="flex items-center gap-2 sm:gap-4">
+                <button id="btn-play" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-sm font-medium shadow-sm transition">
+                    <i data-lucide="play" class="w-4 h-4"></i> <span id="lbl-play">Pausar</span>
+                </button>
+                <button id="btn-step" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md text-sm font-medium transition">
+                    <i data-lucide="step-forward" class="w-4 h-4"></i> Passo
+                </button>
+                <button id="btn-reset" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md text-sm font-medium transition">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reiniciar
+                </button>
+                <div class="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1"></div>
+                
+                <!-- Botão Menu Lateral -->
+                <button onclick="toggleSidebar()" class="flex items-center gap-2 px-3 py-1.5 bg-sky-500 hover:bg-sky-600 text-white rounded-md text-sm font-medium shadow-sm transition">
+                    <i data-lucide="sliders-horizontal" class="w-4 h-4"></i> Menu de Controlos
+                </button>
+
+                <button id="btn-theme" class="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg">
+                    <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
+                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overlay do Menu Lateral -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden transition-opacity" onclick="toggleSidebar()"></div>
+
+    <!-- Menu Lateral de Controlos -->
+    <aside id="sidebar" class="fixed inset-y-0 right-0 w-80 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 transform translate-x-full transition-transform duration-300 ease-in-out z-50 flex flex-col h-full shadow-2xl">
+        <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-950">
+            <h2 class="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <i data-lucide="settings-2" class="w-5 h-5 text-sky-500"></i> Painel de Controlo
+            </h2>
+            <button onclick="toggleSidebar()" class="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md text-slate-500 transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-4 space-y-6">
+            
+            <!-- Controlo das mensagens de condição -->
+            <div class="bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl space-y-2">
+                <div class="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                    <i data-lucide="bell" class="w-4 h-4"></i> Avisos de operação
+                </div>
+                <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer">
+                    <input type="checkbox" id="chk-condition-alerts" class="w-4 h-4 accent-amber-500" checked>
+                    <span>Ativar mensagens de alerta</span>
+                </label>
+                <p class="text-[10px] leading-4 text-slate-500 dark:text-slate-400">Desative para analisar situações extremas sem janelas de aviso. Os cálculos e gráficos continuam ativos.</p>
+            </div>
+
+            <!-- Botão de Regime Ideal -->
+            <div class="bg-sky-500/10 border border-sky-500/30 p-3 rounded-xl space-y-2">
+                <div class="text-xs font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1.5">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i> Ativação Rápida
+                </div>
+                <button onclick="setIdealRegime()" class="w-full py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5">
+                    <i data-lucide="check-circle-2" class="w-4 h-4"></i> Regime Ideal (Sintonizado)
+                </button>
+            </div>
+
+            <!-- Categoria 0: Comandos -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+                    <i data-lucide="play-circle" class="w-4 h-4 text-emerald-500"></i>
+                    <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Comandos & Câmera Lenta</h3>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="btn-start" onclick="setMotorState('run')" class="px-2 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1"><i data-lucide="play" class="w-3 h-3"></i> Partida</button>
+                    <button id="btn-stop" onclick="setMotorState('stop')" class="px-2 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1"><i data-lucide="square" class="w-3 h-3"></i> Parar</button>
+                    <button id="btn-reverse" onclick="setMotorState('rev')" class="px-2 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1"><i data-lucide="repeat" class="w-3 h-3"></i> Inverter</button>
+                </div>
+
+                <div class="space-y-1 pt-1">
+                    <div class="flex justify-between text-xs">
+                        <label class="text-slate-600 dark:text-slate-400">Câmera Lenta Global</label>
+                        <span id="slowmo-val-label" class="font-mono font-semibold text-emerald-500">5x</span>
+                    </div>
+                    <input type="range" id="sld-slowmo-global" min="1" max="20" value="5" class="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                </div>
+            </div>
+
+            <!-- Categoria 1: Mecânica (RPM) -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+                    <i data-lucide="settings" class="w-4 h-4 text-sky-400"></i>
+                    <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Operação Mecânica (RPM)</h3>
+                </div>
+                
+                <div class="space-y-1">
+                    <div class="flex justify-between text-sm">
+                        <label class="font-medium text-slate-700 dark:text-slate-300">Velocidade Alvo (n*)</label>
+                        <span id="val-ref-speed" class="font-mono font-bold text-sky-500">1745.0 RPM</span>
+                    </div>
+                    <input type="range" id="sld-ref-speed" min="-2100" max="2100" step="5" value="1745" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500">
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Motor de 4 polos: velocidade síncrona de 1800 RPM a 60 Hz; nominal 1745 RPM</p>
+                </div>
+
+                <div class="space-y-1">
+                    <div class="flex justify-between text-sm">
+                        <label class="font-medium text-slate-700 dark:text-slate-300">Binário de Carga (T<sub>L</sub>)</label>
+                        <span id="val-load-torque" class="font-mono font-bold text-rose-500">15.0 N·m</span>
+                    </div>
+                    <input type="range" id="sld-load-torque" min="0" max="75" step="0.5" value="8" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-rose-500">
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Binário nominal ≈ 12,1 N·m; máximo ≈ 44,6 N·m (370% do nominal)</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 pt-2">
+                    <button id="btn-load-step" class="px-2 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1"><i data-lucide="zap" class="w-3.5 h-3.5"></i> Degrau Carga</button>
+                    <button id="btn-speed-step" class="px-2 py-1.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 border border-sky-500/30 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1"><i data-lucide="trending-up" class="w-3.5 h-3.5"></i> V. Máxima</button>
+                </div>
+            </div>
+
+            <!-- Categoria 2: Ganhos PI -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+                    <i data-lucide="activity" class="w-4 h-4 text-indigo-400"></i>
+                    <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Ganhos do Controlador PI</h3>
+                </div>
+
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <label class="text-slate-600 dark:text-slate-400">Ganho Proporcional (K<sub>1</sub>)</label>
+                        <span id="val-k1" class="font-mono font-semibold text-indigo-500">2.5</span>
+                    </div>
+                    <input type="range" id="sld-k1" min="0.1" max="15" step="0.1" value="2.5" class="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Rigidez da malha de velocidade</p>
+                </div>
+
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <label class="text-slate-600 dark:text-slate-400">Ganho Integral (K<sub>2</sub>)</label>
+                        <span id="val-k2" class="font-mono font-semibold text-indigo-500">15.0</span>
+                    </div>
+                    <input type="range" id="sld-k2" min="0" max="80" step="1" value="15" class="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Eliminação ativa de erro estático</p>
+                </div>
+            </div>
+
+            <!-- Categoria 3: V/f e Escorregamento Amplo -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+                    <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+                    <h3 class="font-semibold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Perfil V/f & Escorregamento</h3>
+                </div>
+
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <label class="text-slate-600 dark:text-slate-400">Tensão de arranque (V₁)</label>
+                        <span id="val-vboost" class="font-mono font-semibold text-amber-500">20.0 V</span>
+                    </div>
+                    <input type="range" id="sld-vboost" min="0" max="60" step="1" value="12" class="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-500">
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Reforço de tensão em baixas frequências; V₁ não deve ser excessivo.</p>
+                </div>
+
+                <div class="bg-amber-500/10 border border-amber-500/30 p-2.5 rounded-lg">
+                    <label class="flex items-center gap-2 text-xs font-semibold text-amber-600 dark:text-amber-400 cursor-pointer">
+                        <input type="checkbox" id="chk-vf-prop" class="w-4 h-4 accent-amber-500" checked>
+                        <span>Manter Relação V/f Proporcional</span>
+                    </label>
+                </div>
+
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <label class="text-slate-600 dark:text-slate-400">Frequência Manual (f<sub>e</sub>)</label>
+                        <span id="val-manual-freq" class="font-mono font-semibold text-amber-500">60.0 Hz</span>
+                    </div>
+                    <input type="range" id="sld-manual-freq" min="-70" max="70" step="0.5" value="60" class="sld-manual w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-500" disabled>
+                </div>
+
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <label class="text-slate-600 dark:text-slate-400">Tensão Manual (V<sub>s</sub>)</label>
+                        <span id="val-manual-volt" class="font-mono font-semibold text-amber-500">220.0 V</span>
+                    </div>
+                    <input type="range" id="sld-manual-volt" min="10" max="250" step="1" value="220" class="sld-manual w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-500" disabled>
+                </div>
+
+                <div class="space-y-1 pt-2 border-t border-slate-200 dark:border-slate-800">
+                    <div class="flex justify-between text-xs">
+                        <label class="text-slate-600 dark:text-slate-400">Limite de escorregamento (s<sub>max</sub>)</label>
+                        <span id="val-slip-lim" class="font-mono font-semibold text-purple-500">40.0 %</span>
+                    </div>
+                    <input type="range" id="sld-slip-lim" min="2" max="100" step="2" value="40" class="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Limita a saída do PI em frequência de escorregamento (% de 60 Hz); 100% permite até ±60 Hz, mas não força esse valor.</p>
+                </div>
+
+                <div class="rounded-lg border border-fuchsia-500/40 bg-fuchsia-500/5 p-3 space-y-2">
+                    <label class="flex items-center gap-2 text-xs font-semibold text-fuchsia-600 dark:text-fuchsia-400 cursor-pointer">
+                        <input type="checkbox" id="chk-slip-modifier" class="w-4 h-4 accent-fuchsia-500">
+                        <span>Ativar modificador didático de escorregamento</span>
+                    </label>
+                    <select id="sel-slip-regime" class="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 text-xs" disabled>
+                        <option value="negative">s &lt; 0 — regime gerador</option>
+                        <option value="zero">s = 0 — velocidade síncrona</option>
+                        <option value="low">0,002 &lt; s &lt; 0,006 — baixo escorregamento</option>
+                        <option value="high">s &gt; 0,3 — escorregamento elevado</option>
+                    </select>
+                    <div class="text-[10px] text-slate-500 dark:text-slate-400">Modo de análise: impõe um ponto de escorregamento para observar a tendência do binário/corrente. Não representa uma partida real nem substitui o controlo PI. Para comparar, desative a caixa e retome o modo normal.</div>
+                    <div class="text-[10px] font-mono text-fuchsia-600 dark:text-fuchsia-400" id="slip-modifier-status">Modificador desligado</div>
+                </div>
+            </div>
+
+        </div>
+    </aside>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="flex-1 max-w-[1400px] w-full mx-auto p-4 sm:p-6 space-y-6">
+
+        <!-- PAINÉIS SUPERIORES (Dropdowns) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[400px]">
+            
+            <!-- Painel Esquerdo -->
+            <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3 shadow-sm flex flex-col">
+                <div class="flex justify-between items-center mb-2 px-1">
+                    <select id="sel-panel-1" onchange="updatePanels()" class="bg-transparent font-bold text-sm uppercase tracking-wider text-sky-600 dark:text-sky-400 outline-none cursor-pointer border-b-2 border-sky-500/50 pb-1">
+                        <option value="schematic" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white" selected>Esquema do Controlo</option>
+                        <option value="vf" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">Perfil Volts/Hz (Vs vs f<sub>e</sub>)</option>
+                        <option value="motor" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">Motor de Indução Dinâmico</option>
+                        <option value="flux" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">Nuvem Magnética com Deformação</option>
+                        <option value="slip" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">Atribuições do Escorregamento (Curva Te vs s)</option>
+                    </select>
+                </div>
+                <div class="relative flex-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200/50 dark:border-slate-800/50 overflow-hidden">
+                    <div id="p1-schematic" class="absolute inset-0 p-2 hidden items-center justify-center"></div>
+                    <div id="p1-vf" class="absolute inset-0 p-4 hidden flex-col"></div>
+                    <div id="p1-motor" class="absolute inset-0 p-4 hidden flex-col items-center justify-center"></div>
+                    <div id="p1-flux" class="absolute inset-0 p-2 hidden flex-col items-center justify-center"></div>
+                    <div id="p1-slip" class="absolute inset-0 p-2 hidden flex-col"></div>
+                </div>
+            </div>
+
+            <!-- Painel Direito -->
+            <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3 shadow-sm flex flex-col">
+                <div class="flex justify-between items-center mb-2 px-1">
+                    <select id="sel-panel-2" onchange="updatePanels()" class="bg-transparent font-bold text-sm uppercase tracking-wider text-emerald-600 dark:text-emerald-400 outline-none cursor-pointer border-b-2 border-emerald-500/50 pb-1">
+                        <option value="schematic" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">Esquema do Controlo</option>
+                        <option value="vf" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">Perfil Volts/Hz (Vs vs f<sub>e</sub>)</option>
+                        <option value="motor" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white" selected>Motor de Indução Dinâmico</option>
+                        <option value="flux" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">Nuvem Magnética com Deformação</option>
+                        <option value="slip" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">Atribuições do Escorregamento (Curva Te vs s)</option>
+                    </select>
+                </div>
+                <div class="relative flex-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200/50 dark:border-slate-800/50 overflow-hidden">
+                    <div id="p2-schematic" class="absolute inset-0 p-2 hidden items-center justify-center"></div>
+                    <div id="p2-vf" class="absolute inset-0 p-4 hidden flex-col"></div>
+                    <div id="p2-motor" class="absolute inset-0 p-4 hidden flex-col items-center justify-center"></div>
+                    <div id="p2-flux" class="absolute inset-0 p-2 hidden flex-col items-center justify-center"></div>
+                    <div id="p2-slip" class="absolute inset-0 p-2 hidden flex-col"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- MÉTRICAS E GRÁFICOS INFERIORES -->
+        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm flex flex-col gap-4">
+            
+            <!-- Leituras Numéricas -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3">
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800/60 flex flex-col items-center justify-center text-center">
+                    <div class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Velocidade (n)</div>
+                    <div id="readout-speed" class="text-xl font-bold font-mono text-sky-500">0.0 <span class="text-xs font-normal text-slate-400">RPM</span></div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800/60 flex flex-col items-center justify-center text-center">
+                    <div class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Escorregamento (s)</div>
+                    <div id="readout-slip" class="text-xl font-bold font-mono text-purple-500">0.0 <span class="text-xs font-normal text-slate-400">%</span></div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800/60 flex flex-col items-center justify-center text-center">
+                    <div class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Binário (T<sub>e</sub>)</div>
+                    <div id="readout-torque" class="text-xl font-bold font-mono text-emerald-500">0.0 <span class="text-xs font-normal text-slate-400">N·m</span></div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800/60 flex flex-col items-center justify-center text-center">
+                    <div class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Tensão aplicada (Vₛ)</div>
+                    <div id="readout-voltage" class="text-xl font-bold font-mono text-amber-500">0.0 <span class="text-xs font-normal text-slate-400">V</span></div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800/60 flex flex-col items-center justify-center text-center">
+                    <div class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Corrente estimada (Iₛ)</div>
+                    <div id="readout-current" class="text-xl font-bold font-mono text-rose-500">0.0 <span class="text-xs font-normal text-slate-400">A</span></div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800/60 flex flex-col items-center justify-center text-center">
+                    <div class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Frequência do estator (fₑ)</div>
+                    <div id="readout-frequency" class="text-xl font-bold font-mono text-cyan-500">0.0 <span class="text-xs font-normal text-slate-400">Hz</span></div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800/60 flex flex-col items-center justify-center text-center">
+                    <div class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Freq. de escorregamento</div>
+                    <div id="readout-slip-hz" class="text-xl font-bold font-mono text-violet-500">0.0 <span class="text-xs font-normal text-slate-400">Hz</span></div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800/60 flex flex-col items-center justify-center text-center">
+                    <div class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Erro de velocidade</div>
+                    <div id="readout-error" class="text-xl font-bold font-mono text-orange-500">0.0 <span class="text-xs font-normal text-slate-400">RPM</span></div>
+                </div>
+            </div>
+            <details class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3">
+                <summary class="cursor-pointer select-none font-semibold text-sm text-slate-700 dark:text-slate-200">📘 Legenda dos cursores, indicadores e variáveis</summary>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                    <div><b>Referência de velocidade (n*)</b> — velocidade pretendida pelo utilizador. O PI compara-a com a velocidade medida.</div>
+                    <div><b>Carga (Tₗ)</b> — binário resistente aplicado ao eixo; quanto maior, mais binário o motor precisa produzir.</div>
+                    <div><b>K₁ (proporcional)</b> — aumenta a reação imediata ao erro. Valores excessivos podem tornar a resposta agressiva.</div>
+                    <div><b>K₂ (integral)</b> — acumula o erro ao longo do tempo para reduzir erro persistente; valores excessivos podem aumentar oscilações.</div>
+                    <div><b>Limite de escorregamento (sₘₐₓ)</b> — limita a frequência de escorregamento pedida pelo controlador; não força o motor a operar nesse limite.</div>
+                    <div><b>Tensão V₁</b> — reforço de tensão em baixas frequências. É um parâmetro didático ajustável, não um valor fornecido na placa.</div>
+                    <div><b>Velocidade (n)</b> — velocidade mecânica calculada do rotor, em rpm.</div>
+                    <div><b>Escorregamento (s)</b> — diferença relativa entre velocidade síncrona e velocidade do rotor; aqui é uma estimativa do modelo.</div>
+                    <div><b>Binário eletromagnético (Tₑ)</b> — binário calculado que o motor desenvolve, em N·m.</div>
+                    <div><b>Tensão (Vₛ)</b> — amplitude de tensão estimada aplicada pelo modelo, em volts.</div>
+                    <div><b>Corrente (Iₛ)</b> — estimativa didática da corrente do estator; não substitui um circuito equivalente nem uma medição real.</div>
+                    <div><b>Frequência do estator (fₑ)</b> — frequência elétrica comandada ao motor, em Hz.</div>
+                    <div><b>Frequência de escorregamento</b> — componente de frequência usada pelo controlador para produzir binário, em Hz.</div>
+                    <div><b>Erro de velocidade</b> — referência menos velocidade medida. O PI usa este erro para ajustar o comando.</div>
+                </div>
+            </details>
+
+            <!-- Gráficos de Osciloscópio -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200/60 dark:border-slate-800/60 flex flex-col h-[220px]">
+                    <div class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 flex justify-between px-1">
+                        <span>Velocidade em RPM (n* vs n)</span><div class="flex items-center gap-1"><span class="text-[10px] text-sky-500 font-mono">RPM</span><button onclick="zoomOsc('speed',1.25)" title="Aproximar" class="text-[10px] px-1 rounded bg-slate-200 dark:bg-slate-800">+</button><button onclick="zoomOsc('speed',0.8)" title="Afastar" class="text-[10px] px-1 rounded bg-slate-200 dark:bg-slate-800">−</button><button onclick="resetZoom('speed')" title="Repor zoom" class="text-[10px] px-1 rounded bg-slate-200 dark:bg-slate-800">↺</button></div>
+                    </div>
+                    <div class="relative flex-1 w-full"><canvas id="chart-speed" class="absolute inset-0"></canvas></div>
+                </div>
+
+                <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200/60 dark:border-slate-800/60 flex flex-col h-[220px]">
+                    <div class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 flex justify-between px-1">
+                        <span>Binários (T<sub>e</sub> vs T<sub>L</sub>)</span><div class="flex items-center gap-1"><span class="text-[10px] text-emerald-500 font-mono">N·m</span><button onclick="zoomOsc('torque',1.25)" title="Aproximar" class="text-[10px] px-1 rounded bg-slate-200 dark:bg-slate-800">+</button><button onclick="zoomOsc('torque',0.8)" title="Afastar" class="text-[10px] px-1 rounded bg-slate-200 dark:bg-slate-800">−</button><button onclick="resetZoom('torque')" title="Repor zoom" class="text-[10px] px-1 rounded bg-slate-200 dark:bg-slate-800">↺</button></div>
+                    </div>
+                    <div class="relative flex-1 w-full"><canvas id="chart-torque" class="absolute inset-0"></canvas></div>
+                </div>
+
+                <!-- Gráfico 3 Alternável -->
+                <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200/60 dark:border-slate-800/60 flex flex-col h-[220px]">
+                    <div class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 flex justify-between items-center px-1">
+                        <span id="label-third-chart">Escorregamento (%) e Frequência</span>
+                        <div class="flex items-center gap-1">
+                        <button onclick="zoomOsc('third',1.25)" title="Aproximar" class="text-[10px] px-1 rounded bg-slate-200 dark:bg-slate-800">+</button><button onclick="zoomOsc('third',0.8)" title="Afastar" class="text-[10px] px-1 rounded bg-slate-200 dark:bg-slate-800">−</button><button onclick="resetZoom('third')" title="Repor zoom" class="text-[10px] px-1 rounded bg-slate-200 dark:bg-slate-800">↺</button>
+                        <select id="sel-third-chart" onchange="switchThirdChart()" class="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] rounded px-1.5 py-0.5 outline-none cursor-pointer">
+                            <option value="freq">Escorregamento (%) & Freq</option>
+                            <option value="current">Corrente do Estator (I<sub>s</sub>)</option>
+                        </select></div>
+                    </div>
+                    <div class="relative flex-1 w-full"><canvas id="chart-freq" class="absolute inset-0"></canvas></div>
+                </div>
+
+                <!-- Quarto Gráfico com Zoom -->
+                <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200/60 dark:border-slate-800/60 flex flex-col h-[220px]">
+                    <div class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 flex justify-between items-center px-1">
+                        <span id="label-fourth-chart">Plano Vetorial Espacial (α-β) - Vetor Girante</span>
+                        <div class="flex items-center gap-1.5">
+                            <div class="flex items-center gap-0.5 bg-slate-200 dark:bg-slate-800 rounded px-1">
+                                <button onclick="zoomChart(-1)" class="text-xs px-1 font-bold hover:text-sky-500" title="Zoom In">+</button>
+                                <span class="text-[9px] text-slate-400">Zoom</span>
+                                <button onclick="zoomChart(1)" class="text-xs px-1 font-bold hover:text-sky-500" title="Zoom Out">-</button>
+                                <button onclick="resetZoom('fourth')" class="text-xs px-1 font-bold hover:text-sky-500" title="Repor zoom">↺</button>
+                            </div>
+                            <select id="sel-fourth-chart" onchange="switchFourthChart()" class="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] rounded px-1.5 py-0.5 outline-none cursor-pointer">
+                                <option value="vector">Vetor Girante (α-β)</option>
+                                <option value="phases">Correntes Trifásicas (i<sub>a</sub>, i<sub>b</sub>, i<sub>c</sub>)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="relative flex-1 w-full">
+                        <canvas id="chart-fourth" class="absolute inset-0"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Análises adicionais: corrente de arranque, curva T-n e indicadores -->
+            <section class="mt-5 space-y-4">
+              <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3">
+                <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">📊 Indicadores de desempenho e condição térmica estimada</h3>
+                <p class="text-[10px] text-slate-500 mb-3">Estimativas didáticas calculadas a partir do modelo; não substituem ensaios nem proteção térmica real.</p>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                  <div class="rounded-lg bg-slate-50 dark:bg-slate-950 p-2"><div class="text-slate-500">Temperatura estimada</div><b id="metric-temp" class="text-base">25.0 °C</b></div>
+                  <div class="rounded-lg bg-slate-50 dark:bg-slate-950 p-2"><div class="text-slate-500">Estado térmico</div><b id="metric-thermal-state" class="text-base">Normal</b></div>
+                  <div class="rounded-lg bg-slate-50 dark:bg-slate-950 p-2"><div class="text-slate-500">Pico de velocidade</div><b id="metric-peak" class="text-base">0 rpm</b></div>
+                  <div class="rounded-lg bg-slate-50 dark:bg-slate-950 p-2"><div class="text-slate-500">Sobreelevação</div><b id="metric-overshoot" class="text-base">0%</b></div>
+                  <div class="rounded-lg bg-slate-50 dark:bg-slate-950 p-2"><div class="text-slate-500">Erro atual</div><b id="metric-error" class="text-base">1745 rpm</b></div>
+                  <div class="rounded-lg bg-slate-50 dark:bg-slate-950 p-2"><div class="text-slate-500">Tempo de subida estimado</div><b id="metric-rise" class="text-base">—</b></div>
+                  <div class="rounded-lg bg-slate-50 dark:bg-slate-950 p-2"><div class="text-slate-500">Tempo de estabilização</div><b id="metric-settle" class="text-base">—</b></div>
+                  <div class="rounded-lg bg-slate-50 dark:bg-slate-950 p-2"><div class="text-slate-500">Perdas relativas (I²)</div><b id="metric-loss" class="text-base">0%</b></div>
+                </div>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200/60 dark:border-slate-800/60 flex flex-col h-[240px]">
+                  <div class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 flex justify-between px-1"><span>Corrente estimada durante o arranque</span><div class="flex items-center gap-1"><span class="text-[10px] text-rose-500">A</span><button onclick="zoomOsc('currentStart',1.25)" class="text-[10px] px-1 rounded bg-slate-200 dark:bg-slate-800">+</button><button onclick="zoomOsc('currentStart',0.8)" class="text-[10px] px-1 rounded bg-slate-200 dark:bg-slate-800">−</button><button onclick="resetZoom('currentStart')" class="text-[10px] px-1 rounded bg-slate-200 dark:bg-slate-800">↺</button></div></div>
+                  <div class="relative flex-1 w-full"><canvas id="chart-current-start" class="absolute inset-0"></canvas></div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200/60 dark:border-slate-800/60 flex flex-col h-[240px]">
+                  <div class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 flex justify-between px-1"><span>Curva característica aproximada: binário × velocidade</span><div class="flex items-center gap-1"><span class="text-[10px] text-emerald-500">N·m</span><button onclick="zoomOsc('torqueSpeed',1.25)" class="text-[10px] px-1 rounded bg-slate-200 dark:bg-slate-800">+</button><button onclick="zoomOsc('torqueSpeed',0.8)" class="text-[10px] px-1 rounded bg-slate-200 dark:bg-slate-800">−</button><button onclick="resetZoom('torqueSpeed')" class="text-[10px] px-1 rounded bg-slate-200 dark:bg-slate-800">↺</button></div></div>
+                  <div class="relative flex-1 w-full"><canvas id="chart-torque-speed" class="absolute inset-0"></canvas></div>
+                </div>
+              </div>
+              <p class="text-[10px] text-slate-500 dark:text-slate-400">A curva binário–velocidade e a temperatura são aproximações didáticas. A temperatura não é uma previsão certificada dos enrolamentos; o modelo térmico é de primeira ordem e usa corrente relativa e tempo.</p>
+            </section>
+
+        </div>
+
+    </main>
+
+
+    <!-- TEMPLATES DE PAINÉIS -->
+    <template id="tpl-schematic">
+        <svg viewBox="0 0 820 280" class="w-full h-full text-slate-800 dark:text-slate-200 select-none">
+            <defs>
+                <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="currentColor"/>
+                </marker>
+                <marker id="arrow-sky" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284c7"/>
+                </marker>
+            </defs>
+            <g transform="translate(80, 80)">
+                <circle cx="0" cy="0" r="14" fill="none" stroke="currentColor" stroke-width="2"/>
+                <text x="-6" y="5" font-size="14" font-weight="bold" fill="currentColor">+</text><text x="-12" y="24" font-size="12" fill="currentColor">-</text>
+            </g>
+            <path d="M 20 80 L 64 80" fill="none" stroke="#0284c7" stroke-width="2.5" marker-end="url(#arrow-sky)"/><text x="22" y="70" font-size="12" font-weight="bold" fill="#0284c7">n* (RPM)</text>
+            <g transform="translate(120, 55)">
+                <rect x="0" y="0" width="80" height="50" rx="6" fill="rgba(2, 132, 199, 0.1)" stroke="#0284c7" stroke-width="2"/>
+                <text x="40" y="22" text-anchor="middle" font-size="11" font-weight="bold" fill="currentColor">Controlador</text><text x="40" y="38" text-anchor="middle" font-size="12" font-weight="bold" fill="#0284c7">P-I (K₁,K₂)</text>
+            </g>
+            <path d="M 94 80 L 118 80" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
+            <g transform="translate(235, 55)">
+                <rect x="0" y="0" width="60" height="50" rx="6" fill="rgba(148, 163, 184, 0.1)" stroke="currentColor" stroke-width="2"/>
+                <path d="M 12 38 L 24 38 L 36 12 L 48 12" fill="none" stroke="#e11d48" stroke-width="2"/>
+            </g>
+            <path d="M 200 80 L 233 80" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
+            <path d="M 295 80 L 334 80" fill="none" stroke="#0284c7" stroke-width="2" marker-end="url(#arrow-sky)"/><text x="300" y="72" font-size="12" font-weight="bold" fill="#0284c7">f_slip</text>
+            <g transform="translate(350, 80)">
+                <circle cx="0" cy="0" r="14" fill="none" stroke="currentColor" stroke-width="2"/>
+                <text x="-12" y="-3" font-size="12" fill="currentColor">+</text><text x="-4" y="22" font-size="12" fill="currentColor">+</text>
+            </g>
+            <path d="M 364 80 L 410 80" fill="none" stroke="#0284c7" stroke-width="2.5" marker-end="url(#arrow-sky)"/><text x="375" y="72" font-size="12" font-weight="bold" fill="#0284c7">fₑ (Hz)</text>
+            <g transform="translate(420, 25)">
+                <rect x="0" y="0" width="70" height="45" rx="6" fill="rgba(245, 158, 11, 0.1)" stroke="#f59e0b" stroke-width="2"/>
+                <path d="M 10 35 L 25 35 L 50 12 L 60 12" fill="none" stroke="#f59e0b" stroke-width="2"/>
+                <text x="35" y="-5" text-anchor="middle" font-size="10" font-weight="bold" fill="#f59e0b">Vₛ* (V/Hz)</text>
+            </g>
+            <path d="M 390 80 L 390 47 L 418 47" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
+            <path d="M 490 47 L 530 47 L 530 65" fill="none" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrow)"/><text x="502" y="40" font-size="11" font-weight="bold" fill="#f59e0b">Vₛ*</text>
+            <g transform="translate(510, 65)">
+                <rect x="0" y="0" width="80" height="60" rx="6" fill="rgba(99, 102, 241, 0.1)" stroke="#6366f1" stroke-width="2"/>
+                <text x="40" y="28" text-anchor="middle" font-size="11" font-weight="bold" fill="currentColor">Inversor</text><text x="40" y="44" text-anchor="middle" font-size="11" font-weight="bold" fill="currentColor">PWM</text>
+            </g>
+            <path d="M 550 15 L 550 63" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/><text x="555" y="25" font-size="11" font-weight="bold" fill="currentColor">+V_d -</text>
+            <path d="M 590 95 L 638 95" fill="none" stroke="currentColor" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <g transform="translate(645, 95)">
+                <circle cx="25" cy="0" r="25" fill="rgba(16, 185, 129, 0.1)" stroke="#10b981" stroke-width="2.5"/>
+                <text x="25" y="5" text-anchor="middle" font-size="12" font-weight="bold" fill="currentColor">Motor</text>
+            </g>
+            <path d="M 695 95 L 725 95" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="3,3"/>
+            <g transform="translate(725, 75)">
+                <rect x="0" y="0" width="55" height="40" rx="4" fill="rgba(148, 163, 184, 0.2)" stroke="currentColor" stroke-width="2"/>
+                <text x="27" y="18" text-anchor="middle" font-size="9" font-weight="bold" fill="currentColor">Encoder</text><text x="27" y="30" text-anchor="middle" font-size="8" fill="currentColor">RPM</text>
+            </g>
+            
+            <path d="M 752 115 L 752 220 L 350 220 L 350 96" fill="none" stroke="#10b981" stroke-width="2" marker-end="url(#arrow)"/>
+            <path d="M 500 220 L 80 220 L 80 96" fill="none" stroke="#10b981" stroke-width="2" marker-end="url(#arrow)"/>
+            
+            <text x="400" y="212" font-size="12" font-weight="bold" fill="#10b981">n_real (Feedback)</text>
+            <text id="schematic-status" x="410" y="258" text-anchor="middle" font-size="12" font-weight="bold" fill="#0284c7">PI ativo · V₁ = 20 V · V/f</text>
+            <circle class="pulse-ref" cx="40" cy="80" r="4" fill="#0284c7" />
+            <circle class="pulse-fb" cx="752" cy="220" r="4" fill="#10b981" />
+        </svg>
+    </template>
+
+    <template id="tpl-vf">
+        <div class="relative flex-1 w-full h-full mb-3"><canvas class="canvas-vf absolute inset-0 w-full h-full"></canvas></div>
+        <div class="grid grid-cols-3 gap-2 text-center text-[10px] w-full max-w-[400px] mx-auto">
+            <div class="p-1 rounded bg-slate-200 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700/50"><div class="font-bold text-amber-500">Boost (0 a 5 Hz)</div></div>
+            <div class="p-1 rounded bg-slate-200 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700/50"><div class="font-bold text-sky-500">Linear (5 a 60 Hz)</div></div>
+            <div class="p-1 rounded bg-slate-200 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700/50"><div class="font-bold text-rose-500">Enfraquecimento (>60 Hz)</div></div>
+        </div>
+    </template>
+
+    <template id="tpl-motor">
+        <div class="relative flex-1 w-full h-full flex justify-center items-center">
+            <canvas class="canvas-motor w-full h-full object-contain"></canvas>
+        </div>
+    </template>
+
+    <template id="tpl-flux">
+        <div class="relative flex-1 w-full h-full flex justify-center items-center">
+            <canvas class="canvas-flux w-full h-full object-contain"></canvas>
+        </div>
+    </template>
+
+    <template id="tpl-slip">
+        <div class="relative flex-1 w-full h-full flex flex-col p-2">
+            <div class="text-xs font-bold text-purple-500 mb-1 flex justify-between items-center px-1">
+                <span>Atribuição de Escorregamento (Curva Kloss: T<sub>e</sub> vs Escorregamento s)</span>
+                <span id="lbl-slip-state" class="text-[10px] font-mono bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded">Nominal</span>
+            </div>
+            <div class="relative flex-1 w-full"><canvas class="canvas-slip absolute inset-0 w-full h-full"></canvas></div>
+        </div>
+    </template>
+
+    <!-- Script de Simulação -->
+    <script>
+        if (window.lucide && typeof window.lucide.createIcons === 'function') { window.lucide.createIcons(); }
+
+        let slowMoFactor = 5;
+        let vfPropMode = true;
+        let fourthChartMode = 'vector';
+        let thirdChartMode = 'freq';
+        let currentZoom = 25;
+
+        const viewsHTML = {
+            'schematic': document.getElementById('tpl-schematic').innerHTML,
+            'vf': document.getElementById('tpl-vf').innerHTML,
+            'motor': document.getElementById('tpl-motor').innerHTML,
+            'flux': document.getElementById('tpl-flux').innerHTML,
+            'slip': document.getElementById('tpl-slip').innerHTML
+        };
+
+        function initPanels() {
+            Object.keys(viewsHTML).forEach(view => {
+                const el1 = document.getElementById(`p1-${view}`);
+                const el2 = document.getElementById(`p2-${view}`);
+                if(el1) el1.innerHTML = viewsHTML[view];
+                if(el2) el2.innerHTML = viewsHTML[view];
+            });
+
+            document.getElementById('sld-slowmo-global').addEventListener('input', (e) => {
+                slowMoFactor = parseInt(e.target.value);
+                document.getElementById('slowmo-val-label').innerText = slowMoFactor + 'x';
+            });
+
+            updatePanels();
+        }
+
+        function updatePanels() {
+            const v1 = document.getElementById('sel-panel-1').value;
+            const v2 = document.getElementById('sel-panel-2').value;
+
+            ['schematic', 'vf', 'motor', 'flux', 'slip'].forEach(v => {
+                const p1 = document.getElementById(`p1-${v}`);
+                const p2 = document.getElementById(`p2-${v}`);
+                if(p1) { p1.classList.add('hidden'); p1.classList.remove('flex'); }
+                if(p2) { p2.classList.add('hidden'); p2.classList.remove('flex'); }
+            });
+
+            const active1 = document.getElementById(`p1-${v1}`);
+            const active2 = document.getElementById(`p2-${v2}`);
+            if(active1) { active1.classList.remove('hidden'); active1.classList.add('flex'); }
+            if(active2) { active2.classList.remove('hidden'); active2.classList.add('flex'); }
+            
+            drawAllCanvas();
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('translate-x-full');
+            document.getElementById('sidebar-overlay').classList.toggle('hidden');
+        }
+
+        document.getElementById('btn-theme').addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            drawAllCanvas();
+        });
+
+        function setMotorState(state) {
+            if (state === 'run') {
+                // Partida: volta a alimentar o motor e mantém o ciclo de simulação ativo.
+                sim.enabled = true;
+                sim.run = true;
+                if (Math.abs(sim.n_ref) < 1) sim.n_ref = 1745;
+                document.getElementById('sld-ref-speed').value = sim.n_ref;
+                document.getElementById('val-ref-speed').innerText = sim.n_ref.toFixed(1) + " RPM";
+                document.getElementById('lbl-play').innerText = 'Pausar';
+            } else if (state === 'stop') {
+                // Paragem elétrica: corta a alimentação imediatamente; o rotor desacelera por inércia.
+                sim.enabled = false;
+                sim.n_ref = 0;
+                sim.fe = 0;
+                sim.Vs = 0;
+                sim.Te = 0;
+                sim.Is = 0;
+                sim.slip_hz = 0;
+                sim.slip_pct = 0;
+                sim.intErr = 0;
+                sim.run = true; // mantém o tempo a avançar para representar a desaceleração mecânica
+                document.getElementById('sld-ref-speed').value = 0;
+                document.getElementById('val-ref-speed').innerText = "0.0 RPM";
+                document.getElementById('lbl-play').innerText = 'Pausar';
+            } else if (state === 'rev') {
+                sim.enabled = true;
+                sim.n_ref = -Math.abs(sim.n_ref || 1745);
+                document.getElementById('sld-ref-speed').value = sim.n_ref;
+                document.getElementById('val-ref-speed').innerText = sim.n_ref.toFixed(1) + " RPM";
+                sim.run = true;
+                document.getElementById('lbl-play').innerText = 'Pausar';
+            }
+        }
+
+        function setIdealRegime() {
+            sim.n_ref = 1745;
+            sim.TL = 8.0;
+            sim.K1 = 2.5;
+            sim.K2 = 15.0;
+            sim.slip_lim_pct = 40.0;
+            sim.V_boost = 12.0;
+            sim.intErr = 0;
+            vfPropMode = true;
+
+            document.getElementById('sld-ref-speed').value = 1745;
+            document.getElementById('val-ref-speed').innerText = "1745.0 RPM";
+            document.getElementById('sld-load-torque').value = 8.0;
+            document.getElementById('val-load-torque').innerText = "8.0 N·m";
+            document.getElementById('sld-k1').value = 2.5;
+            document.getElementById('val-k1').innerText = "2.5";
+            document.getElementById('sld-k2').value = 15.0;
+            document.getElementById('val-k2').innerText = "15.0";
+            document.getElementById('sld-slip-lim').value = 40.0;
+            document.getElementById('val-slip-lim').innerText = "40.0 %";
+            document.getElementById('sld-vboost').value = 12.0;
+            document.getElementById('val-vboost').innerText = "12.0 V";
+            document.getElementById('chk-vf-prop').checked = true;
+            document.querySelectorAll('.sld-manual').forEach(s => s.disabled = true);
+            sim.run = true;
+        }
+
+        // Modelo didático baseado nos dados de placa: motor trifásico, 4 polos, 220 V, 60 Hz.
+        // Usa a ligação de 220 V (corrente nominal 8,16 A); a alternativa é 380 V / 4,72 A.
+        // A curva de binário e a corrente são aproximações didáticas, não um circuito equivalente completo.
+        const MOTOR = {
+            p: 4,                 // número TOTAL de polos
+            V_rated: 220,         // tensão entre fases na ligação de baixa tensão (V)
+            f_rated: 60.0,        // frequência nominal (Hz)
+            f_fc: 5.0,            // frequência de transição V/f (Hz)
+            n_sync_rated: 1800,   // rpm: 120*f/P
+            n_rated: 1745,        // velocidade nominal de placa (rpm)
+            slip_rated: 3.06,     // escorregamento nominal (%)
+            T_rated: 12.06,       // 1,23 kgf·m ≈ 12,06 N·m
+            T_start: 45.8,        // 380% do binário nominal (aprox.)
+            T_max: 44.6,          // 370% do binário nominal (aprox.)
+            f_slip_crit: 13.3,    // estimado pela curva tipo Kloss a partir do escorregamento nominal
+            I_rated: 8.16,        // corrente nominal a 220 V (A)
+            I_start: 68.5,        // corrente de partida a 220 V (A)
+            I_magnetizing: 4.60,  // corrente a vazio a 220 V (A)
+            J: 0.0097,            // momento de inércia de placa (kg·m²)
+            B: 0.0015             // atrito viscoso estimado (N·m·s/rad)
+        };
+        let sim = {
+            run: true, enabled: true, t: 0, dt: 0.002, theta: 0, fluxAngle: 0,
+            n_ref: 1745, TL: 8, K1: 2.5, K2: 15, slip_lim_pct: 40.0, V_boost: 12,
+            nr_rpm: 0, slip_pct: 0, fe: 0, Vs: 12, Te: 0, Is: MOTOR.I_magnetizing, intErr: 0,
+            slip_hz: 0, manual_fe: 60, manual_Vs: 220, overloadTime: 0, stallTime: 0,
+            tempC: 25, peakSpeed: 0, riseTime: null, settleTime: null, reached90: false, stableSince: null, slipModifierEnabled: false, slipModifierS: 0.004
+        };
+
+        // Alertas estimados: as grandezas térmicas/vibração não são medidas reais neste modelo.
+        let activeConditionAlert = null;
+        const conditionAlertCooldown = {};
+        function showConditionAlert(key, title, subtitle, message, action, level='warning') {
+            const alertToggle = document.getElementById('chk-condition-alerts');
+            if (alertToggle && !alertToggle.checked) return;
+            const now = Date.now();
+            if (activeConditionAlert === key || (conditionAlertCooldown[key] && now - conditionAlertCooldown[key] < 12000)) return;
+            activeConditionAlert = key; conditionAlertCooldown[key] = now;
+            const modal = document.getElementById('condition-modal');
+            const header = document.getElementById('condition-header');
+            header.className = 'flex items-center gap-3 px-5 py-4 text-slate-950 ' + (level === 'danger' ? 'bg-rose-500' : level === 'info' ? 'bg-sky-400' : 'bg-amber-500');
+            document.getElementById('condition-icon').textContent = level === 'danger' ? '🛑' : level === 'info' ? 'ℹ️' : '⚠️';
+            document.getElementById('condition-title').textContent = title;
+            document.getElementById('condition-subtitle').textContent = subtitle;
+            document.getElementById('condition-message').textContent = message;
+            document.getElementById('condition-action').textContent = action;
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+        }
+        function closeConditionAlert() {
+            const modal = document.getElementById('condition-modal');
+            modal.classList.add('hidden'); modal.classList.remove('flex'); activeConditionAlert = null;
+        }
+        function evaluateOperatingConditions() {
+            if (!sim.enabled) { sim.overloadTime = 0; sim.stallTime = 0; return; }
+            const currentRatio = sim.Is / MOTOR.I_rated;
+            const absSlipHz = Math.abs(sim.slip_hz);
+            const highSlip = absSlipHz > MOTOR.f_rated * 0.25;
+            const stalled = Math.abs(sim.n_ref) > 200 && Math.abs(sim.nr_rpm) < 60 && Math.abs(sim.Te) < sim.TL * 1.05;
+            sim.overloadTime = currentRatio > 1.25 ? sim.overloadTime + sim.dt : Math.max(0, sim.overloadTime - sim.dt * 2);
+            sim.stallTime = stalled ? sim.stallTime + sim.dt : Math.max(0, sim.stallTime - sim.dt * 2);
+            if (sim.stallTime > 1.5) {
+                showConditionAlert('stall', 'Possível bloqueio do rotor', 'Carga superior ao binário disponível', `A velocidade permanece em ${sim.nr_rpm.toFixed(0)} rpm apesar da referência de ${sim.n_ref.toFixed(0)} rpm. O binário calculado (${sim.Te.toFixed(1)} N·m) pode não vencer a carga (${sim.TL.toFixed(1)} N·m).`, 'Reduza a carga, reveja V₁ e os ganhos PI. Em motores reais, não mantenha o rotor bloqueado: a corrente pode aquecer rapidamente os enrolamentos.', 'danger');
+            } else if (sim.overloadTime > 2.0) {
+                showConditionAlert('overcurrent', 'Sobrecarga elétrica estimada', 'Corrente acima de 125% da nominal', `A corrente estimada é ${sim.Is.toFixed(1)} A (${currentRatio.toFixed(2)} × a corrente nominal de ${MOTOR.I_rated.toFixed(2)} A). O modelo não calcula diretamente a temperatura dos enrolamentos.`, 'Reduza a carga ou a exigência de aceleração. Em operação real, verifique proteção térmica, corrente de placa e tempo admissível de sobrecarga.', 'danger');
+            } else if (Math.abs(sim.nr_rpm) > MOTOR.n_rated * 1.15) {
+                showConditionAlert('overspeed', 'Velocidade elevada', 'Acima de 115% da velocidade nominal', `A velocidade simulada chegou a ${sim.nr_rpm.toFixed(0)} rpm, acima da faixa de referência do motor.`, 'Reduza a referência e confirme se a frequência e a tensão estão dentro dos limites permitidos.', 'warning');
+            } else if (highSlip && Math.abs(sim.n_ref - sim.nr_rpm) > 0.3 * MOTOR.n_sync_rated) {
+                showConditionAlert('slip', 'Escorregamento elevado', 'O controlador está a exigir muito escorregamento', `A frequência de escorregamento é ${sim.slip_hz.toFixed(1)} Hz. Isso pode indicar carga elevada, aceleração insuficiente ou saturação do controlador.`, 'Verifique a carga, o limite de escorregamento, a tensão disponível e os ganhos PI. O escorregamento elevado é um indicador de esforço, não uma medição direta de temperatura.', 'warning');
+            } else if (currentRatio > 1.1 || Math.abs(sim.slip_pct) > MOTOR.slip_rated * 2) {
+                showConditionAlert('efficiency', 'Possível perda de eficiência', 'Condição fora da região nominal', `A corrente estimada é ${sim.Is.toFixed(1)} A e o escorregamento indicado é ${sim.slip_pct.toFixed(1)}%. Nessas condições, as perdas podem aumentar; o simulador não calcula eficiência instantânea com rigor.`, 'Tente reduzir a carga ou ajustar a referência e observe se a corrente e o escorregamento regressam a valores menores.', 'warning');
+            } else if (Math.abs(sim.slip_hz) > MOTOR.f_rated * 0.5) {
+                showConditionAlert('vibration', 'Possível funcionamento severo', 'Indicador indireto de esforço dinâmico', `A frequência de escorregamento atingiu ${sim.slip_hz.toFixed(1)} Hz. Isto pode estar associado a esforços dinâmicos elevados, mas o modelo não calcula vibração mecânica real.`, 'Reduza a exigência de controlo e verifique a resposta. Para prever vibração real seriam necessários dados mecânicos e um modelo específico.', 'warning');
+            }
+        }
+
+
+        const N = 200;
+        const bufTime = Array(N).fill(0), bufRef = Array(N).fill(0), bufNr = Array(N).fill(0);
+        const bufTe = Array(N).fill(0), bufTL = Array(N).fill(0), bufFe = Array(N).fill(0);
+        const bufSlipPct = Array(N).fill(0), bufCurrentIs = Array(N).fill(0);
+        const bufFourthX = Array(N).fill(0), bufFourthY = Array(N).fill(0), bufFourthZ = Array(N).fill(0);
+        const bufCurrentStart = Array(N).fill(0), bufTorqueSpeed = Array(N).fill(0), bufTorqueSpeedLabels = Array(N).fill(0);
+        let chSpd, chTrq, chThird, chFourth, chCurrentStart, chTorqueSpeed;
+
+        function initCharts() {
+            const opts = { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } },
+                scales: { x: { display: false }, y: { grid: { color: 'rgba(148,163,184,0.1)' }, ticks: { font: { size: 9, family: 'monospace' }, callback: v => v.toFixed(0) } } },
+                elements: { point: { radius: 0 }, line: { borderWidth: 1.5 } }
+            };
+            chSpd = new Chart(document.getElementById('chart-speed'), { type: 'line', data: { labels: bufTime, datasets: [ { data: bufRef, borderColor: '#0284c7', borderDash: [4,4] }, { data: bufNr, borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.1)', fill: true } ]}, options: { ...opts, plugins: { ...opts.plugins, legend: { ...opts.plugins.legend } }, scales: { x: { ...opts.scales.x }, y: { ...opts.scales.y, grid: { ...opts.scales.y.grid }, ticks: { ...opts.scales.y.ticks, callback: opts.scales.y.ticks.callback } } }, elements: { ...opts.elements, point: { ...opts.elements.point }, line: { ...opts.elements.line } } } });
+            chTrq = new Chart(document.getElementById('chart-torque'), { type: 'line', data: { labels: bufTime, datasets: [ { data: bufTe, borderColor: '#10b981' }, { data: bufTL, borderColor: '#f43f5e', borderDash: [3,3] } ]}, options: { ...opts, plugins: { ...opts.plugins, legend: { ...opts.plugins.legend } }, scales: { x: { ...opts.scales.x }, y: { ...opts.scales.y, grid: { ...opts.scales.y.grid }, ticks: { ...opts.scales.y.ticks, callback: opts.scales.y.ticks.callback } } }, elements: { ...opts.elements, point: { ...opts.elements.point }, line: { ...opts.elements.line } } } });
+            
+            chThird = new Chart(document.getElementById('chart-freq'), { 
+                type: 'line', 
+                data: { labels: bufTime, datasets: [ { data: bufSlipPct, borderColor: '#a855f7' }, { data: bufFe, borderColor: '#38bdf8', borderDash: [2,2] } ]}, 
+                options: {
+                    responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { min: -20, max: 100, grid: { color: 'rgba(148,163,184,0.1)' }, ticks: { font: { size: 9, family: 'monospace' }, callback: v => v.toFixed(0) } } },
+                    elements: { point: { radius: 0 }, line: { borderWidth: 1.5 } }
+                } 
+            });
+            
+            chFourth = new Chart(document.getElementById('chart-fourth'), { 
+                type: 'line', 
+                data: { labels: bufTime, datasets: [ 
+                    { data: bufFourthX, borderColor: '#0284c7' },
+                    { data: bufFourthY, borderColor: '#10b981' },
+                    { data: bufFourthZ, borderColor: '#f43f5e' }
+                ]}, 
+                options: { 
+                    responsive: true, maintainAspectRatio: false, animation: false, 
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        x: { display: false }, 
+                        y: { 
+                            min: -25, max: 25,
+                            grid: { color: 'rgba(148,163,184,0.1)' }, 
+                            ticks: { font: { size: 9, family: 'monospace' }, callback: v => v.toFixed(1) } 
+                        } 
+                    },
+                    elements: { point: { radius: 0 }, line: { borderWidth: 1.5 } }
+                } 
+            });
+            chCurrentStart = new Chart(document.getElementById('chart-current-start'), { type: 'line', data: { labels: bufTime, datasets: [
+                { label: 'Corrente estimada', data: bufCurrentStart, borderColor: '#f43f5e', pointRadius: 0, borderWidth: 1.5 },
+                { label: 'Corrente nominal', data: Array(N).fill(MOTOR.I_rated), borderColor: '#0284c7', borderDash: [4,3], pointRadius: 0, borderWidth: 1 }
+              ]}, options: { ...opts, plugins: { legend: { display: true, labels: { boxWidth: 8, font: { size: 9 } } } }, scales: { x: { ...opts.scales.x }, y: { ...opts.scales.y, grid: { ...opts.scales.y.grid }, ticks: { ...opts.scales.y.ticks, callback: opts.scales.y.ticks.callback } } } } });
+            const tqLabels = [], tqValues = [];
+            for (let rpm = -1800; rpm <= 1800; rpm += 30) {
+                tqLabels.push(String(rpm));
+                const rotorHz = (MOTOR.p / 2) * rpm / 60;
+                const slip = MOTOR.f_rated - rotorHz;
+                const x = slip / MOTOR.f_slip_crit;
+                tqValues.push((2 * MOTOR.T_max * x / (1 + x*x)) * (Math.abs(MOTOR.f_rated) > MOTOR.f_rated ? MOTOR.f_rated/Math.abs(MOTOR.f_rated) : 1));
+            }
+            chTorqueSpeed = new Chart(document.getElementById('chart-torque-speed'), { type: 'line', data: { labels: tqLabels, datasets: [
+                { label: 'Binário aproximado', data: tqValues, borderColor: '#10b981', pointRadius: 0, borderWidth: 1.5 },
+                { label: 'Binário atual', data: Array(tqLabels.length).fill(null), borderColor: '#f43f5e', pointRadius: 3, showLine: false }
+              ]}, options: { ...opts, plugins: { legend: { display: true, labels: { boxWidth: 8, font: { size: 9 } } }, tooltip: { enabled: true } }, scales: { x: { display: true, ticks: { maxTicksLimit: 7, font: { size: 8 } } }, y: { ...opts.scales.y, min: -MOTOR.T_max*1.2, max: MOTOR.T_max*1.2 } } } });
+        }
+
+        function switchThirdChart() {
+            thirdChartMode = document.getElementById('sel-third-chart').value;
+            const label = document.getElementById('label-third-chart');
+            if (thirdChartMode === 'freq') {
+                label.innerText = "Escorregamento (%) e Frequência";
+                chThird.data.datasets = [
+                    { data: bufSlipPct, borderColor: '#a855f7' },
+                    { data: bufFe, borderColor: '#38bdf8', borderDash: [2,2], hidden: false }
+                ];
+                chThird.options.scales.y.min = -20;
+                chThird.options.scales.y.max = 100;
+            } else {
+                label.innerText = "Corrente do Estator estimada (I_s)";
+                chThird.data.datasets = [
+                    { data: bufCurrentIs, borderColor: '#f43f5e' }
+                ];
+                chThird.options.scales.y.min = 0;
+                chThird.options.scales.y.max = 60;
+            }
+            zoomFactors.third = 1;
+            zoomBaseRanges.third = null;
+            resetZoom('third');
+        }
+
+        function switchFourthChart() {
+            fourthChartMode = document.getElementById('sel-fourth-chart').value;
+            const label = document.getElementById('label-fourth-chart');
+            if (fourthChartMode === 'vector') {
+                label.innerText = "Plano Vetorial Espacial (α-β) - Vetor Girante";
+                chFourth.data.datasets[0].borderColor = '#0284c7';
+                chFourth.data.datasets[1].borderColor = '#10b981';
+                chFourth.data.datasets[2].hidden = true;
+                currentZoom = 25;
+                zoomFactors.fourth = 1;
+            } else {
+                label.innerText = "Correntes Trifásicas estimadas (i_a, i_b, i_c)";
+                chFourth.data.datasets[0].borderColor = '#f43f5e';
+                chFourth.data.datasets[1].borderColor = '#f59e0b';
+                chFourth.data.datasets[2].borderColor = '#10b981';
+                chFourth.data.datasets[2].hidden = false;
+                currentZoom = 45;
+                zoomFactors.fourth = 1;
+            }
+            zoomBaseRanges.fourth = null;
+            zoomFactors.fourth = 1;
+            chFourth.options.scales.y.min = -currentZoom;
+            chFourth.options.scales.y.max = currentZoom;
+            chFourth.update('none');
+        }
+
+        const zoomFactors = { speed: 1, torque: 1, third: 1, fourth: 1, currentStart: 1, torqueSpeed: 1 };
+        const zoomBaseRanges = { speed: null, torque: null, third: null, fourth: null, currentStart: null, torqueSpeed: null };
+
+        function getZoomChart(key) {
+            return ({ speed: chSpd, torque: chTrq, third: chThird, fourth: chFourth, currentStart: chCurrentStart, torqueSpeed: chTorqueSpeed })[key];
+        }
+        function getDefaultZoomBase(key) {
+            if (key === 'speed') return { min: -200, max: 2000 };
+            if (key === 'torque') return { min: -55, max: 55 };
+            if (key === 'third') return thirdChartMode === 'current' ? { min: 0, max: 70 } : { min: -20, max: 100 };
+            if (key === 'fourth') return { min: -currentZoom, max: currentZoom };
+            if (key === 'currentStart') return { min: 0, max: 75 };
+            if (key === 'torqueSpeed') return { min: -5, max: 50 };
+            return { min: -10, max: 10 };
+        }
+        function deriveZoomBase(key) {
+            // Use a stable, meaningful initial range. Re-deriving from a moving buffer
+            // made the apparent zoom drift while the simulation was running.
+            return getDefaultZoomBase(key);
+        }
+        function applyZoom(key) {
+            const chart = getZoomChart(key);
+            if (!chart || !chart.options || !chart.options.scales || !chart.options.scales.y) return;
+            if (!zoomBaseRanges[key]) zoomBaseRanges[key] = deriveZoomBase(key);
+            const base = zoomBaseRanges[key];
+            const factor = zoomFactors[key];
+            const mid = (base.min + base.max) / 2;
+            const half = (base.max - base.min) / (2 * factor);
+            chart.options.scales.y.min = mid - half;
+            chart.options.scales.y.max = mid + half;
+            chart.update('none');
+        }
+        function zoomOsc(key, multiplier) {
+            if (!Object.prototype.hasOwnProperty.call(zoomFactors, key)) return;
+            if (!zoomBaseRanges[key]) zoomBaseRanges[key] = deriveZoomBase(key);
+            zoomFactors[key] = Math.max(0.25, Math.min(10, zoomFactors[key] * multiplier));
+            applyZoom(key);
+        }
+        function resetZoom(key) {
+            if (!Object.prototype.hasOwnProperty.call(zoomFactors, key)) return;
+            zoomFactors[key] = 1;
+            zoomBaseRanges[key] = null;
+            const chart = getZoomChart(key);
+            if (!chart || !chart.options || !chart.options.scales || !chart.options.scales.y) return;
+            const base = getDefaultZoomBase(key);
+            chart.options.scales.y.min = base.min;
+            chart.options.scales.y.max = base.max;
+            chart.update('none');
+        }
+        function zoomChart(direction) {
+            zoomOsc('fourth', direction < 0 ? 1.25 : 0.8);
+        }
+
+        function calculateVs(fe_hz) {
+            const f = Math.abs(fe_hz);
+            const V1 = Math.max(0, Math.min(60, sim.V_boost));
+            // Offset V1 na origem e rampa V/f até à tensão nominal.
+            // Limita-se a tensão à nominal; acima de 60 Hz há enfraquecimento de campo.
+            if (f >= MOTOR.f_rated) return MOTOR.V_rated;
+            return Math.min(MOTOR.V_rated, V1 + (MOTOR.V_rated - V1) * (f / MOTOR.f_rated));
+        }
+
+        function drawVFProfile(canvas) {
+            if(!canvas || canvas.offsetParent === null) return;
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio; canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            
+            const w = rect.width, h = rect.height;
+            const isDark = document.documentElement.classList.contains('dark');
+            ctx.clearRect(0, 0, w, h);
+
+            const pL = 35, pR = 15, pT = 15, pB = 20;
+            const plotW = w - pL - pR, plotH = h - pT - pB;
+            const xToPx = (x) => pL + (x/70) * plotW;
+            const yToPx = (y) => pT + plotH - (y/280) * plotH;
+
+            ctx.fillStyle = isDark ? 'rgba(245,158,11,0.05)' : 'rgba(245,158,11,0.08)'; ctx.fillRect(xToPx(0), pT, xToPx(MOTOR.f_fc)-xToPx(0), plotH);
+            ctx.fillStyle = isDark ? 'rgba(2,132,199,0.05)' : 'rgba(2,132,199,0.08)'; ctx.fillRect(xToPx(MOTOR.f_fc), pT, xToPx(MOTOR.f_rated)-xToPx(MOTOR.f_fc), plotH);
+            ctx.fillStyle = isDark ? 'rgba(244,63,94,0.05)' : 'rgba(244,63,94,0.08)'; ctx.fillRect(xToPx(MOTOR.f_rated), pT, xToPx(70)-xToPx(MOTOR.f_rated), plotH);
+
+            ctx.beginPath(); ctx.strokeStyle = isDark ? '#475569' : '#cbd5e1'; ctx.lineWidth = 1.5;
+            ctx.moveTo(pL, pT); ctx.lineTo(pL, pT + plotH); ctx.lineTo(pL + plotW, pT + plotH); ctx.stroke();
+
+            ctx.beginPath(); ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2.5;
+            ctx.moveTo(xToPx(0), yToPx(sim.V_boost));
+            const V_fc = sim.V_boost + (MOTOR.f_fc/MOTOR.f_rated)*(MOTOR.V_rated - sim.V_boost);
+            ctx.lineTo(xToPx(MOTOR.f_fc), yToPx(V_fc)); ctx.lineTo(xToPx(MOTOR.f_rated), yToPx(MOTOR.V_rated)); ctx.lineTo(xToPx(70), yToPx(MOTOR.V_rated));
+            ctx.stroke();
+
+            const abs_fe = Math.min(70, Math.max(0, Math.abs(sim.fe)));
+            const abs_Vs = Math.min(280, Math.max(0, sim.Vs));
+            ctx.beginPath(); ctx.fillStyle = vfPropMode ? '#38bdf8' : '#f43f5e'; 
+            ctx.arc(xToPx(abs_fe), yToPx(abs_Vs), 6, 0, 2*Math.PI); ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+        }
+
+        function drawMotorDetailed(canvas) {
+            if(!canvas || canvas.offsetParent === null) return;
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio; canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            
+            const w = rect.width, h = rect.height;
+            const isDark = document.documentElement.classList.contains('dark');
+            ctx.clearRect(0,0,w,h);
+            ctx.save(); ctx.translate(w/2, h/2);
+
+            const r = Math.min(w,h)/2 - 15;
+
+            ctx.fillStyle = isDark ? '#334155' : '#cbd5e1';
+            for(let i=0; i<36; i++) {
+                ctx.save(); ctx.rotate(i*Math.PI*2/36); ctx.fillRect(r-5, -4, 15, 8); ctx.restore();
+            }
+
+            ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2);
+            ctx.fillStyle = isDark ? '#1e293b' : '#e2e8f0'; ctx.fill();
+            ctx.lineWidth = 4; ctx.strokeStyle = isDark ? '#0f172a' : '#94a3b8'; ctx.stroke();
+
+            for(let i=0; i<12; i++) {
+                ctx.save(); ctx.rotate(i*Math.PI*2/12);
+                ctx.beginPath(); ctx.arc(r*0.75, 0, r*0.15, 0, Math.PI*2);
+                ctx.fillStyle = '#b45309'; ctx.fill();
+                ctx.lineWidth = 2; ctx.strokeStyle = '#78350f'; ctx.stroke();
+                ctx.restore();
+            }
+
+            ctx.beginPath(); ctx.arc(0,0,r*0.62,0,Math.PI*2);
+            ctx.fillStyle = isDark ? '#0b0f19' : '#f8fafc'; ctx.fill();
+
+            const theta_elec = sim.theta * (MOTOR.p / 2);
+            ctx.rotate(theta_elec);
+            ctx.beginPath(); ctx.arc(0,0,r*0.59,0,Math.PI*2);
+            ctx.fillStyle = isDark ? '#475569' : '#94a3b8'; ctx.fill();
+            ctx.lineWidth = 2; ctx.strokeStyle = isDark ? '#64748b' : '#cbd5e1'; ctx.stroke();
+            
+            for(let i=0; i<16; i++) {
+                ctx.save(); ctx.rotate(i*Math.PI*2/16);
+                ctx.beginPath(); ctx.arc(r*0.46, 0, r*0.06, 0, Math.PI*2);
+                ctx.fillStyle = '#fbbf24'; ctx.fill();
+                ctx.restore();
+            }
+            
+            ctx.beginPath(); ctx.arc(0,0,r*0.2,0,Math.PI*2);
+            ctx.fillStyle = isDark ? '#cbd5e1' : '#ffffff'; ctx.fill();
+            ctx.lineWidth = 2; ctx.strokeStyle = isDark ? '#334155' : '#64748b'; ctx.stroke();
+            ctx.fillStyle = isDark ? '#64748b' : '#94a3b8';
+            ctx.fillRect(-r*0.04, -r*0.20, r*0.08, r*0.06);
+
+            ctx.restore();
+        }
+
+        function drawMagneticFlux(canvas) {
+            if(!canvas || canvas.offsetParent === null) return;
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio; canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            
+            const w = rect.width, h = rect.height;
+            const isDark = document.documentElement.classList.contains('dark');
+            ctx.clearRect(0,0,w,h);
+            ctx.save(); ctx.translate(w/2, h/2);
+
+            const r = Math.min(w,h)/2 - 20;
+
+            const fluxIntensity = Math.min(1.4, Math.max(0.15, sim.Vs / MOTOR.V_rated));
+            const slipDeformation = Math.min(0.8, Math.abs(sim.slip_pct) * 0.015);
+
+            ctx.save();
+            ctx.rotate(sim.fluxAngle);
+            ctx.beginPath();
+            const lobes = 4;
+            const baseRadius = (r * 0.60) * fluxIntensity;
+            for (let a = 0; a < Math.PI * 2; a += 0.01) {
+                const deformation = (Math.sin(a * lobes + sim.t * 3) * (r * 0.10)) + (Math.cos(a * 2) * slipDeformation * 15);
+                const currentR = Math.max(10, Math.min(r - 5, baseRadius + deformation));
+                const x = Math.cos(a) * currentR;
+                const y = Math.sin(a) * currentR;
+                if (a === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            
+            const grad = ctx.createRadialGradient(0, 0, 10, 0, 0, r);
+            grad.addColorStop(0, fluxIntensity > 1.3 ? 'rgba(244, 63, 94, 0.3)' : 'rgba(56, 189, 248, 0.2)');
+            grad.addColorStop(0.7, fluxIntensity > 1.3 ? 'rgba(225, 29, 72, 0.5)' : 'rgba(2, 132, 199, 0.4)');
+            grad.addColorStop(1, fluxIntensity > 1.3 ? 'rgba(159, 18, 57, 0.9)' : 'rgba(14, 165, 233, 0.8)');
+            ctx.fillStyle = grad;
+            ctx.fill();
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = fluxIntensity > 1.3 ? '#f43f5e' : '#38bdf8';
+            ctx.stroke();
+            ctx.restore();
+
+            const vecLen = Math.min(r * 0.7, (r * 0.45) * fluxIntensity);
+            const dx = Math.cos(sim.fluxAngle) * vecLen;
+            const dy = Math.sin(sim.fluxAngle) * vecLen;
+
+            ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(dx, dy);
+            ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 3.5; ctx.stroke();
+            
+            ctx.save(); ctx.translate(dx, dy); ctx.rotate(sim.fluxAngle);
+            ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-12, -6); ctx.lineTo(-12, 6); ctx.closePath();
+            ctx.fillStyle = '#f59e0b'; ctx.fill();
+            ctx.restore();
+
+            ctx.fillStyle = isDark ? '#f8fafc' : '#1e293b';
+            ctx.font = '11px JetBrains Mono';
+            ctx.fillText(fluxIntensity > 1.3 ? "Saturação / Enfraquecimento" : "Campo Magnético Nominal", -r + 10, -r + 15);
+
+            ctx.restore();
+        }
+
+        function drawSlipAttributes(canvas) {
+            if(!canvas || canvas.offsetParent === null) return;
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio; canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            
+            const w = rect.width, h = rect.height;
+            const isDark = document.documentElement.classList.contains('dark');
+            ctx.clearRect(0,0,w,h);
+
+            const pL = 40, pR = 20, pT = 20, pB = 30;
+            const plotW = w - pL - pR, plotH = h - pT - pB;
+
+            const sMin = -0.1, sMax = 1.0;
+            const TMax = 50.0;
+            const sToPx = (s) => pL + ((s - sMin) / (sMax - sMin)) * plotW;
+            const TToPx = (T) => pT + plotH - (Math.max(0, T) / TMax) * plotH;
+
+            ctx.beginPath(); ctx.strokeStyle = isDark ? '#475569' : '#cbd5e1'; ctx.lineWidth = 1.5;
+            ctx.moveTo(pL, pT); ctx.lineTo(pL, pT + plotH); ctx.lineTo(pL + plotW, pT + plotH); ctx.stroke();
+
+            ctx.beginPath(); ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 2.5;
+            for(let px = 0; px <= plotW; px += 2) {
+                const s = sMin + (px / plotW) * (sMax - sMin);
+                const abs_s = Math.max(0.001, Math.abs(s));
+                const s_crit = MOTOR.f_slip_crit / MOTOR.f_rated;
+                const T_kloss = (2 * MOTOR.T_max * abs_s / s_crit) / (Math.pow(abs_s / s_crit, 2) + 1);
+                const T_val = s < 0 ? -T_kloss * 0.5 : T_kloss;
+                const py = TToPx(T_val);
+                if (px === 0) ctx.moveTo(pL + px, py);
+                else ctx.lineTo(pL + px, py);
+            }
+            ctx.stroke();
+
+            const current_s = sim.slip_pct / 100.0;
+            const curPx = sToPx(current_s);
+            const curPy = TToPx(sim.Te);
+
+            ctx.beginPath(); ctx.fillStyle = '#10b981';
+            ctx.arc(curPx, curPy, 6, 0, 2*Math.PI); ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+
+            ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+            ctx.font = '10px JetBrains Mono';
+            ctx.fillText("s = 0", sToPx(0) - 10, pT + plotH + 15);
+            ctx.fillText("s_crit (Máx)", sToPx(0.15) - 25, pT + 10);
+            ctx.fillText("s = 1 (Estalagem)", sToPx(1.0) - 60, pT + plotH + 15);
+        }
+
+        function drawAllCanvas() {
+            document.querySelectorAll('.canvas-vf').forEach(drawVFProfile);
+            document.querySelectorAll('.canvas-motor').forEach(drawMotorDetailed);
+            document.querySelectorAll('.canvas-flux').forEach(drawMagneticFlux);
+            document.querySelectorAll('.canvas-slip').forEach(drawSlipAttributes);
+        }
+
+        function stepPhys() {
+            const dt = sim.dt;
+            const polePairs = MOTOR.p / 2;
+            const rotorMechRad = sim.nr_rpm * 2 * Math.PI / 60;
+            let newRotorMechRad = rotorMechRad;
+            const rotorElecHz = polePairs * sim.nr_rpm / 60;
+            let slipHz = 0;
+
+            if (sim.slipModifierEnabled) {
+                // Modo didático: fixa o escorregamento relativo s=(fs-fr)/fs.
+                // f_slip = fr*s/(1-s); este modo serve para estudar pontos de operação,
+                // não para simular uma partida desde repouso.
+                const sTarget = sim.slipModifierS;
+                const denom = Math.abs(1 - sTarget) < 0.05 ? (sTarget < 1 ? 0.05 : -0.05) : (1 - sTarget);
+                slipHz = rotorElecHz * sTarget / denom;
+                sim.slip_hz = slipHz;
+                sim.fe = rotorElecHz + slipHz;
+                sim.Vs = calculateVs(sim.fe);
+                sim.manual_fe = sim.fe;
+                sim.manual_Vs = sim.Vs;
+            } else if (vfPropMode) {
+                // PI normalizado: erro em pu da velocidade nominal, saída em Hz de escorregamento.
+                const errPu = (sim.n_ref - sim.nr_rpm) / MOTOR.n_sync_rated;
+                const oldIntegral = sim.intErr;
+                const maxSlipHz = (sim.slip_lim_pct / 100) * MOTOR.f_rated;
+                const pTerm = sim.K1 * errPu;
+                const rawSlipHz = pTerm + sim.K2 * oldIntegral;
+                slipHz = Math.max(-maxSlipHz, Math.min(maxSlipHz, rawSlipHz));
+
+                // Anti-windup condicional: não integra mais para dentro da saturação.
+                const saturatedHigh = rawSlipHz > maxSlipHz && errPu > 0;
+                const saturatedLow = rawSlipHz < -maxSlipHz && errPu < 0;
+                if (!saturatedHigh && !saturatedLow) {
+                    sim.intErr += errPu * dt;
+                    sim.intErr = Math.max(-2, Math.min(2, sim.intErr));
+                }
+
+                sim.slip_hz = slipHz;
+                sim.fe = rotorElecHz + slipHz;
+                sim.Vs = calculateVs(sim.fe);
+                sim.manual_fe = sim.fe;
+                sim.manual_Vs = sim.Vs;
+                const sf = document.getElementById('sld-manual-freq');
+                const sv = document.getElementById('sld-manual-volt');
+                if (sf) {
+                    sf.value = Math.max(-70, Math.min(70, sim.fe));
+                    document.getElementById('val-manual-freq').innerText = sim.fe.toFixed(1) + ' Hz';
+                }
+                if (sv) {
+                    sv.value = Math.max(10, Math.min(300, sim.Vs));
+                    document.getElementById('val-manual-volt').innerText = sim.Vs.toFixed(1) + ' V';
+                }
+            } else {
+                sim.fe = sim.manual_fe;
+                sim.Vs = sim.manual_Vs;
+                slipHz = sim.fe - rotorElecHz;
+                sim.slip_hz = slipHz;
+            }
+
+            // Escorregamento relativo assinado s=(f_s-f_r,el)/f_s.
+            // Perto de frequência nula, s não é numericamente bem definido; mostramos 0.
+            sim.slip_pct = sim.slipModifierEnabled ? sim.slipModifierS * 100 : (Math.abs(sim.fe) > 0.5 ? (slipHz / sim.fe) * 100 : 0);
+
+            // Modelo de binário didático tipo Kloss em função da frequência de escorregamento.
+            // T=2*Tmax*x/(1+x²), com x=f_slip/f_slip_crit.
+            const x = slipHz / MOTOR.f_slip_crit;
+            const klossTorque = (2 * MOTOR.T_max * x) / (1 + x * x);
+
+            // V/f aproximadamente constante até à frequência nominal; acima dela, enfraquecimento.
+            const absFe = Math.abs(sim.fe);
+            let fluxRatio = 1;
+            if (absFe > MOTOR.f_rated) fluxRatio = MOTOR.f_rated / absFe;
+            else if (absFe > 0.5) {
+                const idealV = MOTOR.V_rated * absFe / MOTOR.f_rated;
+                fluxRatio = Math.min(1.2, sim.Vs / Math.max(idealV, 1));
+            } else {
+                fluxRatio = Math.min(1.2, sim.Vs / Math.max(MOTOR.V_rated * MOTOR.f_fc / MOTOR.f_rated, 1));
+            }
+            sim.Te = klossTorque * fluxRatio * fluxRatio;
+
+            // Estimativa ilustrativa da corrente RMS, calibrada para a corrente nominal e a corrente de partida da placa.
+            // O termo de alto escorregamento aproxima a corrente de partida direta; não é um circuito equivalente completo.
+            const torqueCurrent = Math.sqrt(Math.max(0, MOTOR.I_rated ** 2 - MOTOR.I_magnetizing ** 2)) * Math.abs(sim.Te) / MOTOR.T_rated;
+            const currentFromTorque = Math.sqrt(MOTOR.I_magnetizing ** 2 + torqueCurrent ** 2);
+            // A corrente de partida elevada depende sobretudo de o rotor ainda estar longe
+            // da velocidade de referência. Não a inferimos apenas de |f_slip|: o controlador
+            // pode manter frequência de escorregamento para produzir binário mesmo em regime.
+            const speedForCurrent = Math.max(Math.abs(sim.n_ref), 300);
+            const speedFraction = Math.min(1, Math.abs(sim.nr_rpm) / speedForCurrent);
+            const startupWeight = Math.pow(Math.max(0, 1 - speedFraction), 3);
+            // Mistura suave entre corrente associada ao binário e corrente elevada de rotor parado.
+            // Continua a ser uma estimativa didática, não um circuito equivalente completo.
+            sim.Is = Math.min(MOTOR.I_start, currentFromTorque + startupWeight * (MOTOR.I_start - currentFromTorque));
+
+            // Modelo térmico didático de primeira ordem: aquecimento proporcional a I² e arrefecimento para ambiente.
+            // Não representa a temperatura real dos enrolamentos nem substitui proteção térmica.
+            const ambientC = 25;
+            const thermalTau = 240; // constante de tempo estimada (s)
+            const thermalRiseAtRated = 65; // elevação ilustrativa a corrente nominal (°C)
+            const currentRatioThermal = sim.enabled ? (sim.Is / MOTOR.I_rated) : 0;
+            const thermalTarget = ambientC + thermalRiseAtRated * currentRatioThermal * currentRatioThermal;
+            sim.tempC += ((thermalTarget - sim.tempC) / thermalTau) * dt;
+            sim.peakSpeed = Math.max(sim.peakSpeed, Math.abs(sim.nr_rpm));
+            if (!sim.reached90 && Math.abs(sim.n_ref) > 1 && Math.abs(sim.nr_rpm) >= 0.9 * Math.abs(sim.n_ref)) {
+                sim.reached90 = true; sim.riseTime = sim.t;
+            }
+            const inBand = Math.abs(sim.n_ref - sim.nr_rpm) <= Math.max(10, Math.abs(sim.n_ref)*0.02);
+            if (sim.enabled && inBand) {
+                if (sim.stableSince === null) sim.stableSince = sim.t;
+                if (sim.settleTime === null && sim.t - sim.stableSince >= 0.5) sim.settleTime = sim.stableSince;
+            } else { sim.stableSince = null; }
+
+            // Quando a alimentação está desligada, não há tensão, corrente nem binário eletromagnético.
+            // A parte mecânica continua a evoluir para representar a desaceleração por inércia.
+            if (!sim.enabled) {
+                sim.fe = 0;
+                sim.Vs = 0;
+                sim.slip_hz = 0;
+                sim.slip_pct = 0;
+                sim.Te = 0;
+                sim.Is = 0;
+                sim.intErr = 0;
+                slipHz = 0;
+            }
+
+            // Binário resistente opõe-se ao movimento atual; no arranque usa o sentido de referência.
+            const commandDirection = Math.sign(sim.n_ref || sim.nr_rpm || sim.fe || 1);
+            const direction = Math.abs(sim.nr_rpm) > 0.2 ? Math.sign(sim.nr_rpm) : commandDirection;
+            const loadTorqueSigned = sim.TL * direction;
+            const frictionTorque = MOTOR.B * rotorMechRad;
+            // Atrito estático simplificado: se o binário disponível não vence a carga,
+            // o rotor fica parado em vez de alternar numericamente entre ± poucos RPM.
+            const torqueInCommandDirection = sim.Te * commandDirection;
+            if (sim.enabled && Math.abs(sim.nr_rpm) < 3 && torqueInCommandDirection <= sim.TL + 0.15) {
+                sim.nr_rpm = 0;
+                newRotorMechRad = 0;
+                sim.intErr = Math.max(-0.5, Math.min(0.5, sim.intErr));
+            } else {
+                const accel = (sim.Te - loadTorqueSigned - frictionTorque) / MOTOR.J;
+                newRotorMechRad = rotorMechRad + accel * dt;
+                // Limite numérico de segurança para evitar divergência do integrador.
+                newRotorMechRad = Math.max(-250, Math.min(250, newRotorMechRad));
+                sim.nr_rpm = newRotorMechRad * 60 / (2 * Math.PI);
+                if (Math.abs(sim.nr_rpm) < 0.15) sim.nr_rpm = 0;
+                if (!sim.enabled && Math.abs(sim.nr_rpm) < 0.5) { sim.nr_rpm = 0; newRotorMechRad = 0; }
+            }
+
+            // Ângulo mecânico e ângulo elétrico para visualização.
+            sim.t += dt;
+            sim.theta += newRotorMechRad * dt;
+            sim.fluxAngle += 2 * Math.PI * sim.fe * dt / slowMoFactor;
+
+            bufTime.shift(); bufTime.push(sim.t.toFixed(2));
+            bufRef.shift(); bufRef.push(sim.n_ref);
+            bufNr.shift(); bufNr.push(sim.nr_rpm);
+            bufSlipPct.shift(); bufSlipPct.push(sim.slip_pct);
+            bufFe.shift(); bufFe.push(sim.fe);
+            bufCurrentIs.shift(); bufCurrentIs.push(sim.Is);
+            bufCurrentStart.shift(); bufCurrentStart.push(sim.Is);
+            bufTe.shift(); bufTe.push(sim.Te);
+            bufTL.shift(); bufTL.push(sim.TL * direction);
+
+            if (fourthChartMode === 'vector') {
+                bufFourthX.shift(); bufFourthX.push(Math.sqrt(2) * sim.Is * Math.cos(sim.fluxAngle));
+                bufFourthY.shift(); bufFourthY.push(Math.sqrt(2) * sim.Is * Math.sin(sim.fluxAngle));
+                bufFourthZ.shift(); bufFourthZ.push(0);
+            } else {
+                const phaseAngle = sim.fluxAngle;
+                const peakCurrent = Math.sqrt(2) * sim.Is;
+                bufFourthX.shift(); bufFourthX.push(peakCurrent * Math.sin(phaseAngle));
+                bufFourthY.shift(); bufFourthY.push(peakCurrent * Math.sin(phaseAngle - 2 * Math.PI / 3));
+                bufFourthZ.shift(); bufFourthZ.push(peakCurrent * Math.sin(phaseAngle + 2 * Math.PI / 3));
+            }
+        }
+
+        function updateControlSchematic() {
+            document.querySelectorAll('#p1-schematic #schematic-status, #p2-schematic #schematic-status').forEach(el => {
+                const mode = vfPropMode ? 'V/f automático' : 'Modo manual';
+                const state = !sim.enabled ? 'ALIMENTAÇÃO OFF' : (Math.abs(sim.n_ref - sim.nr_rpm) < 15 ? 'VELOCIDADE ESTÁVEL' : 'A REGULAR');
+                el.textContent = `${state} · ${mode} · erro ${(sim.n_ref - sim.nr_rpm).toFixed(0)} rpm · fₑ ${sim.fe.toFixed(1)} Hz · Vₛ ${sim.Vs.toFixed(0)} V · Iₛ ${sim.Is.toFixed(1)} A`;
+                el.setAttribute('fill', !sim.enabled ? '#f43f5e' : (Math.abs(sim.n_ref - sim.nr_rpm) < 15 ? '#10b981' : '#0284c7'));
+            });
+            document.querySelectorAll('.pulse-ref').forEach(el => {
+                const phase = (sim.t * (2 + Math.min(8, Math.abs(sim.n_ref) / 300))) % 1;
+                const x = 20 + phase * 44;
+                el.setAttribute('cx', x);
+                el.setAttribute('r', sim.enabled ? 4.5 : 2.5);
+                el.setAttribute('opacity', sim.enabled ? 1 : 0.35);
+            });
+            document.querySelectorAll('.pulse-fb').forEach(el => {
+                const phase = (sim.t * (1 + Math.min(8, Math.abs(sim.nr_rpm) / 300))) % 1;
+                const x = 752 - phase * 80;
+                el.setAttribute('cx', x);
+                el.setAttribute('r', sim.enabled ? 4.5 : 2.5);
+                el.setAttribute('opacity', sim.enabled ? 1 : 0.35);
+            });
+        }
+
+        let loopErrorShown = false;
+        function loop() {
+            try {
+                if (sim.run) {
+                    stepPhys(); stepPhys();
+                    evaluateOperatingConditions();
+                    const speedEl = document.getElementById('readout-speed');
+                    const slipEl = document.getElementById('readout-slip');
+                    const torqueEl = document.getElementById('readout-torque');
+                    const voltageEl = document.getElementById('readout-voltage');
+                    if (speedEl) speedEl.innerHTML = `${sim.nr_rpm.toFixed(1)} <span class="text-xs font-normal text-slate-400">RPM</span>`;
+                    if (slipEl) slipEl.innerHTML = `${sim.slip_pct.toFixed(1)} <span class="text-xs font-normal text-slate-400">%</span>`;
+                    if (torqueEl) torqueEl.innerHTML = `${sim.Te.toFixed(2)} <span class="text-xs font-normal text-slate-400">N·m</span>`;
+                    if (voltageEl) voltageEl.innerHTML = `${sim.Vs.toFixed(2)} <span class="text-xs font-normal text-slate-400">V</span>`;
+                    const currentEl = document.getElementById('readout-current');
+                    const frequencyEl = document.getElementById('readout-frequency');
+                    const slipHzEl = document.getElementById('readout-slip-hz');
+                    const errorEl = document.getElementById('readout-error');
+                    if (currentEl) currentEl.innerHTML = `${sim.Is.toFixed(2)} <span class="text-xs font-normal text-slate-400">A</span>`;
+                    if (frequencyEl) frequencyEl.innerHTML = `${sim.fe.toFixed(2)} <span class="text-xs font-normal text-slate-400">Hz</span>`;
+                    if (slipHzEl) slipHzEl.innerHTML = `${sim.slip_hz.toFixed(2)} <span class="text-xs font-normal text-slate-400">Hz</span>`;
+                    if (errorEl) errorEl.innerHTML = `${(sim.n_ref - sim.nr_rpm).toFixed(1)} <span class="text-xs font-normal text-slate-400">RPM</span>`;
+                    const setMetric = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+                    const tempState = sim.tempC >= 130 ? 'Crítico' : sim.tempC >= 100 ? 'Atenção' : 'Normal';
+                    setMetric('metric-temp', `${sim.tempC.toFixed(1)} °C`);
+                    setMetric('metric-thermal-state', tempState);
+                    setMetric('metric-peak', `${sim.peakSpeed.toFixed(0)} rpm`);
+                    const over = Math.abs(sim.n_ref) > 1 ? Math.max(0, (sim.peakSpeed - Math.abs(sim.n_ref)) / Math.abs(sim.n_ref) * 100) : 0;
+                    setMetric('metric-overshoot', `${over.toFixed(1)}%`);
+                    setMetric('metric-error', `${(sim.n_ref - sim.nr_rpm).toFixed(1)} rpm`);
+                    setMetric('metric-rise', sim.riseTime === null ? '—' : `${sim.riseTime.toFixed(2)} s`);
+                    setMetric('metric-settle', sim.settleTime === null ? '—' : `${sim.settleTime.toFixed(2)} s`);
+                    setMetric('metric-loss', `${((sim.Is / MOTOR.I_rated) ** 2 * 100).toFixed(0)}%`);
+                    if (chTorqueSpeed) {
+                        const idx = Math.max(0, Math.min(chTorqueSpeed.data.labels.length - 1, Math.round((sim.nr_rpm + 1800) / 30)));
+                        chTorqueSpeed.data.datasets[1].data = chTorqueSpeed.data.labels.map((_, i) => i === idx ? sim.Te : null);
+                    }
+                    [chSpd, chTrq, chThird, chFourth, chCurrentStart, chTorqueSpeed].forEach(ch => { if (ch && typeof ch.update === 'function') ch.update('none'); });
+                    drawAllCanvas();
+                    if (typeof updateControlSchematic === 'function') updateControlSchematic();
+                }
+            } catch (err) {
+                console.error('Erro durante a simulação:', err);
+                if (!loopErrorShown) {
+                    loopErrorShown = true;
+                    const notice = document.createElement('div');
+                    notice.style.cssText = 'position:fixed;bottom:12px;left:12px;right:12px;z-index:99999;background:#7f1d1d;color:white;padding:10px 14px;border-radius:8px;font:12px sans-serif';
+                    notice.textContent = 'Erro na simulação: ' + (err && err.message ? err.message : String(err)) + '. Abra a consola do navegador para mais detalhes.';
+                    document.body.appendChild(notice);
+                }
+            }
+            requestAnimationFrame(loop);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const dismissCondition = document.getElementById('condition-dismiss');
+            if (dismissCondition) dismissCondition.addEventListener('click', closeConditionAlert);
+            const alertToggle = document.getElementById('chk-condition-alerts');
+            if (alertToggle) alertToggle.addEventListener('change', () => {
+                if (!alertToggle.checked) closeConditionAlert();
+            });
+            const conditionModal = document.getElementById('condition-modal');
+            if (conditionModal) conditionModal.addEventListener('click', e => { if (e.target === conditionModal) closeConditionAlert(); });
+            try { initPanels(); } catch (err) { console.error('Erro ao iniciar painéis:', err); }
+            try { initCharts(); } catch (err) {
+                console.error('Não foi possível iniciar os gráficos (Chart.js pode não ter carregado):', err);
+                const notice = document.createElement('div');
+                notice.style.cssText = 'position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;background:#7f1d1d;color:white;padding:10px 14px;border-radius:8px;font:12px sans-serif';
+                notice.textContent = 'A simulação está a correr, mas a biblioteca dos gráficos não carregou. Verifique a ligação à Internet e recarregue a página.';
+                document.body.appendChild(notice);
+            }
+            
+            const bnd = [
+                { id: 'ref-speed', k: 'n_ref', u: 'RPM' }, { id: 'load-torque', k: 'TL', u: 'N·m' },
+                { id: 'k1', k: 'K1', u: '' }, { id: 'k2', k: 'K2', u: '' },
+                { id: 'slip-lim', k: 'slip_lim_pct', u: '%' }, { id: 'vboost', k: 'V_boost', u: 'V' },
+                { id: 'manual-freq', k: 'manual_fe', u: 'Hz' }, { id: 'manual-volt', k: 'manual_Vs', u: 'V' }
+            ];
+            bnd.forEach(b => {
+                const el = document.getElementById('sld-'+b.id);
+                if(el) {
+                    el.addEventListener('input', e => {
+                        sim[b.k] = parseFloat(e.target.value);
+                        const valEl = document.getElementById('val-'+b.id);
+                        if(valEl) valEl.innerText = `${sim[b.k].toFixed(1)} ${b.u}`;
+                        if(b.id==='vboost' || b.id.includes('manual')) drawAllCanvas();
+                    });
+                }
+            });
+
+            const chkVfProp = document.getElementById('chk-vf-prop');
+            const manualSliders = document.querySelectorAll('.sld-manual');
+            chkVfProp.addEventListener('change', e => {
+                vfPropMode = e.target.checked;
+                manualSliders.forEach(s => s.disabled = vfPropMode);
+            });
+            const slipModifierCheckbox = document.getElementById('chk-slip-modifier');
+            const slipRegimeSelect = document.getElementById('sel-slip-regime');
+            function updateSlipModifier() {
+                const regime = slipRegimeSelect.value;
+                const targets = { negative: -0.05, zero: 0, low: 0.004, high: 0.35 };
+                sim.slipModifierEnabled = slipModifierCheckbox.checked;
+                sim.slipModifierS = targets[regime] ?? 0.004;
+                slipRegimeSelect.disabled = !sim.slipModifierEnabled;
+                const status = document.getElementById('slip-modifier-status');
+                if (status) status.textContent = sim.slipModifierEnabled
+                    ? `Ativo: s = ${sim.slipModifierS.toFixed(3)} (${(sim.slipModifierS*100).toFixed(1)}%) — modo didático`
+                    : 'Modificador desligado';
+                if (sim.slipModifierEnabled) {
+                    // Deixa o controlador PI fora do caminho enquanto o ponto é imposto.
+                    sim.intErr = 0;
+                }
+            }
+            slipModifierCheckbox.addEventListener('change', updateSlipModifier);
+            slipRegimeSelect.addEventListener('change', updateSlipModifier);
+
+            document.getElementById('btn-play').addEventListener('click', e => {
+                sim.run = !sim.run;
+                e.currentTarget.className = sim.run ? 'flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-md text-sm font-medium shadow-sm transition' : 'flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-sm font-medium shadow-sm transition';
+                document.getElementById('lbl-play').innerText = sim.run ? 'Pausar' : 'Iniciar';
+            });
+            document.getElementById('btn-step').addEventListener('click', () => { sim.run = false; stepPhys(); drawAllCanvas(); });
+            document.getElementById('btn-reset').addEventListener('click', () => location.reload());
+            document.getElementById('btn-load-step').addEventListener('click', () => { sim.TL = Math.min(75, sim.TL+5); document.getElementById('sld-load-torque').value = sim.TL; document.getElementById('val-load-torque').innerText = sim.TL.toFixed(1)+" N·m"; });
+            document.getElementById('btn-speed-step').addEventListener('click', () => { sim.n_ref = 1745; document.getElementById('sld-ref-speed').value = 1745; document.getElementById('val-ref-speed').innerText = "1745.0 RPM"; });
+
+            window.addEventListener('resize', drawAllCanvas);
+            requestAnimationFrame(loop);
+        });
+    </script>
+
+    <!-- Janela de alertas didáticos de operação -->
+    <div id="condition-modal" class="fixed inset-0 z-[100000] hidden items-center justify-center bg-slate-950/70 p-4" role="dialog" aria-modal="true" aria-labelledby="condition-title">
+      <div class="w-full max-w-lg overflow-hidden rounded-2xl border border-amber-400/40 bg-white shadow-2xl dark:bg-slate-900">
+        <div id="condition-header" class="flex items-center gap-3 bg-amber-500 px-5 py-4 text-slate-950">
+          <span id="condition-icon" class="text-2xl">⚠️</span>
+          <div><h2 id="condition-title" class="text-lg font-bold">Condição de operação</h2><p id="condition-subtitle" class="text-xs opacity-80">Aviso estimado pelo simulador</p></div>
+        </div>
+        <div class="space-y-3 p-5">
+          <p id="condition-message" class="text-sm leading-6 text-slate-700 dark:text-slate-200"></p>
+          <p id="condition-action" class="rounded-lg bg-slate-100 p-3 text-sm dark:bg-slate-800"></p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Este aviso é didático e baseado em estimativas do modelo. Não representa uma medição real de temperatura, vibração ou eficiência, nem substitui proteções físicas do motor.</p>
+          <div class="flex justify-end gap-2 pt-1"><button id="condition-dismiss" class="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900">Compreendi</button></div>
+        </div>
+      </div>
+    </div>
+
+</body>
+</html>
