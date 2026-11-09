@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Simulação -  transformadas de Clarke e Park.">
+  <title> UPB - Simulação - DS | Clarke & Park</title>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
+:root{--bg:#0b1220;--panel:#121d2e;--panel2:#172438;--line:#26364c;--text:#eaf1fa;--muted:#9aabc0;--cyan:#52d6d0;--blue:#78a9ff;--orange:#ffb86b;--pink:#f18bc2;--green:#71d6a1}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 15% 0%,#172943 0,transparent 36%),var(--bg);color:var(--text);font-family:Manrope,Arial,sans-serif;font-size:14px}.topbar{max-width:1440px;margin:auto;padding:30px 34px 25px;display:flex;align-items:center;gap:18px;border-bottom:1px solid var(--line)}.brand-mark{width:58px;height:58px;border-radius:17px;background:linear-gradient(135deg,#4bd3cb,#568dff);display:grid;place-items:center;color:#071321;font-weight:800;font-size:20px;letter-spacing:-2px;flex-shrink:0}.brand-mark span{font-size:13px}.eyebrow{font-size:10px;letter-spacing:1.8px;color:var(--cyan);font-weight:800;margin:0 0 7px}.topbar h1{font-size:clamp(22px,3vw,32px);margin:0;letter-spacing:-1.2px}.subtitle{color:var(--muted);margin:5px 0 0}.top-badge{margin-left:auto;border:1px solid #2d6570;background:#16323b;color:#8de6df;padding:9px 13px;border-radius:30px;font-size:11px;white-space:nowrap}main{max-width:1440px;margin:auto;padding:24px 34px 45px}.panel{background:linear-gradient(145deg,rgba(20,32,50,.97),rgba(16,27,43,.97));border:1px solid var(--line);border-radius:17px;padding:20px;box-shadow:0 12px 30px rgba(0,0,0,.12);margin-bottom:18px}.intro{display:flex;justify-content:space-between;align-items:center;gap:25px}.intro h2,.section-heading h2{font-size:19px;margin:0 0 7px}.intro p:not(.eyebrow){color:var(--muted);max-width:750px;line-height:1.65;margin:0}.live-readout{display:flex;align-items:center;gap:13px;padding:13px 16px;background:#0d1828;border:1px solid var(--line);border-radius:12px;flex-shrink:0}.live-readout small,.metrics small,.calculation small,.error-box small{display:block;color:var(--muted);font-size:10px;margin-bottom:5px}.live-readout strong{font:500 15px 'DM Mono',monospace}.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green)}.divider{height:28px;width:1px;background:var(--line)}.section-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:17px}.section-heading.compact{margin-bottom:12px}.status,.tag{font-size:9px;letter-spacing:1px;color:#a9bed5;border:1px solid var(--line);border-radius:20px;padding:6px 9px}.transport{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.button{background:#1b2b40;color:var(--text);border:1px solid #344961;padding:10px 13px;border-radius:9px;font:600 11px Manrope;cursor:pointer}.button:hover{filter:brightness(1.2)}.button.primary{background:linear-gradient(110deg,#2caaa8,#397fc6);border:0;color:#061622}.button.ghost{background:transparent}.speed-control{margin-left:auto;color:var(--muted);font-size:11px;display:flex;align-items:center;gap:8px}select,input[type=number]{background:#0c1726;border:1px solid #30445c;color:var(--text);padding:8px 9px;border-radius:7px;font:12px 'DM Mono',monospace}.timeline-row{display:flex;gap:12px;align-items:center;margin:17px 0 14px;color:var(--muted);font:10px 'DM Mono',monospace}input[type=range]{accent-color:var(--cyan);width:100%;cursor:pointer}.parameter-grid{display:grid;grid-template-columns:1fr 1fr 1.5fr 1fr;gap:13px}.parameter-grid label{display:flex;flex-direction:column;gap:7px;color:var(--muted);font-size:11px}.parameter-grid input[type=number],.parameter-grid select{width:100%}.range-with-value{display:flex;align-items:center;gap:10px}.range-with-value output{font:12px 'DM Mono';color:var(--text);min-width:42px}.hint,.footnote{color:#8093aa;font-size:10px;line-height:1.6;margin:13px 0 0}.checks{display:flex;gap:12px 22px;flex-wrap:wrap}.checks label{display:flex;align-items:center;gap:8px;color:#c5d2e1;font-size:11px;cursor:pointer}.checks input{accent-color:var(--cyan)}.small-actions{display:flex;gap:13px}.text-button{background:none;border:0;color:var(--cyan);font:600 10px Manrope;cursor:pointer}.dashboard{display:grid;grid-template-columns:1fr 1fr;gap:18px}.viz-panel{margin:0;min-width:0}.viz-panel.full{grid-column:1/-1}.panel-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.panel-title>div{display:flex;align-items:center;gap:11px}.panel-title .eyebrow{margin-bottom:3px;font-size:9px}.panel-title h3{font-size:15px;margin:0}.step{width:31px;height:31px;border-radius:10px;display:grid;place-items:center;background:#1b3448;color:var(--cyan);font:500 11px 'DM Mono'}.chart{height:280px;width:100%}.metrics{display:grid;gap:8px;margin-top:4px}.metrics.three{grid-template-columns:repeat(3,1fr)}.metrics>div{background:#0c1726;border:1px solid #24364b;border-radius:9px;padding:10px 12px}.metrics strong{font:500 13px 'DM Mono',monospace;color:var(--text)}.equation{background:#0c1726;border:1px solid #25394e;border-radius:10px;padding:15px;margin:13px 0;display:flex;align-items:center;justify-content:space-around;gap:12px;flex-wrap:wrap}.eq-label{font:13px 'DM Mono',monospace;color:#d9e8f6}.matrix{display:flex;align-items:center;gap:7px;color:var(--cyan);font:12px 'DM Mono',monospace;line-height:1.8}.bracket{border-left:1px solid #7691a8;border-right:1px solid #7691a8;padding:2px 9px}.calculation{display:grid;grid-template-columns:1fr 28px 1fr;align-items:center;gap:8px;text-align:center;padding:6px 0}.calculation strong{font:11px 'DM Mono';color:#dce9f6}.calc-arrow{color:var(--cyan);font-size:20px}.compact-eq{padding:12px}.compact-eq .eq-label{font-size:11px}.inverse-grid{display:grid;grid-template-columns:1fr 1fr .8fr;gap:12px}.inverse-equation,.error-box{background:#0c1726;border:1px solid #263a50;border-radius:11px;padding:15px}.inverse-equation .eyebrow{margin-bottom:12px}.inverse-equation .eq-label{font-size:12px;margin:8px 0}.inverse-equation small{display:block;color:var(--cyan);font:11px 'DM Mono';margin-top:13px}.error-box{display:flex;flex-direction:column;justify-content:center}.error-box strong{font:600 19px 'DM Mono';margin:4px 0 9px}.good{color:var(--green);font-size:10px}.notes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.notes-grid strong{color:#dce9f6;font-size:12px}.notes-grid p{color:var(--muted);font-size:11px;line-height:1.6;margin:6px 0 0}.notes .footnote{border-top:1px solid var(--line);padding-top:12px}footer{max-width:1440px;margin:auto;padding:0 34px 25px;color:#8093aa;font-size:10px;display:flex;justify-content:space-between}
+@media(max-width:850px){main{padding:18px 14px 35px}.topbar{padding:22px 15px;align-items:flex-start}.top-badge{display:none}.intro{align-items:flex-start;flex-direction:column}.live-readout{width:100%;justify-content:space-around}.parameter-grid{grid-template-columns:1fr 1fr}.dashboard{grid-template-columns:1fr}.viz-panel.full{grid-column:auto}.inverse-grid{grid-template-columns:1fr}.notes-grid{grid-template-columns:1fr;gap:12px}.speed-control{margin-left:0}.chart{height:260px}footer{padding:0 15px 20px;gap:10px;flex-direction:column}}
+@media(max-width:480px){.topbar h1{font-size:21px}.brand-mark{width:45px;height:45px}.parameter-grid{grid-template-columns:1fr}.metrics strong{font-size:11px}.panel{padding:15px}.checks{gap:12px}.button{padding:9px 10px}}
+
+.chart-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:7px 0 2px}.view-switch{display:inline-flex;gap:4px;padding:4px;background:#0c1726;border:1px solid #263a50;border-radius:9px}.view-btn{border:0;border-radius:6px;padding:7px 10px;background:transparent;color:#9aabc0;font:600 10px Manrope;cursor:pointer}.view-btn.active{background:#24465a;color:#8de6df}.trace-option{display:flex;align-items:center;gap:6px;color:#aebed0;font-size:10px;cursor:pointer}.trace-option input{accent-color:var(--cyan)}
+
+</style>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand-mark">αβ<span>dq</span></div>
+  <div>
+    <p class="eyebrow">Simulation DS</p>
+    <h1>Transformadas de Clarke &amp; Park</h1>
+    <p class="subtitle">Do sistema trifásico abc ao referencial ortogonal rotativo dq0</p>
+  </div>
+  <div class="top-badge">Don Scaramal</div>
+</header>
+
+<main>
+  <section class="intro panel">
+    <div>
+      <p class="eyebrow">SIMULAÇÃO INTERATIVA</p>
+      <h2>Representação das tranformadas e seus respectivos eixos/comportamentos.</h2>
+      <p>Os gráficos, vetores e cálculos partilham o mesmo instante de simulação.</p>
+    </div>
+    <div class="live-readout">
+      <span class="live-dot"></span>
+      <div><small>Ângulo elétrico</small><strong id="angleReadout">0,0°</strong></div>
+      <div class="divider"></div>
+      <div><small>Tempo</small><strong id="timeReadout">0,000 s</strong></div>
+    </div>
+  </section>
+
+  <section class="controls panel">
+    <div class="section-heading">
+      <div><p class="eyebrow">CONTROLE</p><h2>Simulação</h2></div>
+      <span class="status" id="status">PAUSADA</span>
+    </div>
+    <div class="transport">
+      <button class="button primary" id="playBtn">▶ Reproduzir</button>
+      <button class="button" id="pauseBtn"> Pausar</button>
+      <button class="button" id="backBtn">◀ 1 passo</button>
+      <button class="button" id="forwardBtn">1 passo ▶</button>
+      <button class="button ghost" id="resetBtn">↺ Reiniciar</button>
+      <label class="speed-control">Velocidade
+        <select id="speed">
+          <option value="0.02">0,02×</option><option value="0.05">0,05×</option><option value="0.1">0,1×</option><option value="0.15">0,15×</option><option value="0.25">0,25×</option><option value="0.5">0,5×</option>
+          <option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option>
+        </select>
+      </label>
+    </div>
+    <div class="timeline-row">
+      <span id="startTime">0,000 s</span>
+      <input type="range" id="timeSlider" min="0" max="1" step="0.001" value="0">
+      <span id="endTime">0,100 s</span>
+    </div>
+    <div class="parameter-grid">
+      <label>Amplitude de fase (pico), A
+        <input type="number" id="amplitude" min="0.1" max="1000" step="0.5" value="10">
+      </label>
+      <label>Frequência, f
+        <input type="number" id="frequency" min="0.1" max="500" step="0.5" value="50">
+      </label>
+      <label>Desfasamento do referencial, θ₀
+        <div class="range-with-value"><input type="range" id="offset" min="-180" max="180" step="1" value="0"><output id="offsetValue">0°</output></div>
+      </label>
+      <label>Duração visível
+        <select id="duration"><option value="0.04">40 ms</option><option value="0.1" selected>100 ms</option><option value="0.2">200 ms</option><option value="0.5">500 ms</option></select>
+      </label>
+    </div>
+    <p class="hint">Convenção das fases: ia = Î cos(ωt), ib = Î cos(ωt − 120°), ic = Î cos(ωt + 120°). O referencial dq acompanha a velocidade elétrica do vetor; θ₀ permite alterar a sua orientação relativa. Use “Sinais no tempo” para observar as componentes como ondas e “Mostrar percurso anterior” para visualizar o caminho já percorrido pelo vetor.</p>
+  </section>
+
+  <section class="panel visibility">
+    <div class="section-heading compact">
+      <div><p class="eyebrow">PAINÉIS</p><h2>Visualização das etapas</h2></div>
+      <div class="small-actions"><button class="text-button" id="selectAll">Selecionar todos</button><button class="text-button" id="selectNone">Limpar</button></div>
+    </div>
+    <div class="checks">
+      <label><input type="checkbox" class="panel-toggle" data-target="phasePanel" checked> Sistema abc</label>
+      <label><input type="checkbox" class="panel-toggle" data-target="complexPanel" checked> Plano complexo αβ</label>
+      <label><input type="checkbox" class="panel-toggle" data-target="clarkePanel" checked> Transformada de Clarke</label>
+      <label><input type="checkbox" class="panel-toggle" data-target="parkPanel" checked> Transformada de Park</label>
+      <label><input type="checkbox" class="panel-toggle" data-target="inversePanel" checked> Transformações inversas</label>
+    </div>
+  </section>
+
+  <section class="dashboard">
+    <article class="panel viz-panel" id="phasePanel">
+      <div class="panel-title"><div><span class="step">01</span><div><p class="eyebrow">SISTEMA TRIFÁSICO</p><h3>Correntes de fase abc</h3></div></div><span class="tag">Referencial estacionário</span></div>
+      <div id="phaseChart" class="chart"></div>
+      <div class="metrics three">
+        <div><small>iₐ</small><strong id="iaValue">0,000 A</strong></div>
+        <div><small>iᵦ</small><strong id="ibValue">0,000 A</strong></div>
+        <div><small>i𝒸</small><strong id="icValue">0,000 A</strong></div>
+      </div>
+    </article>
+
+    <article class="panel viz-panel" id="complexPanel">
+      <div class="panel-title"><div><span class="step">02</span><div><p class="eyebrow">VETOR ESPACIAL</p><h3>Plano complexo αβ</h3></div></div><span class="tag">α + jβ</span></div>
+      <div class="chart-tools"><div class="view-switch" role="group" aria-label="Representação do vetor alfa beta"><button class="view-btn active" data-view="plane" data-chart="complex">Plano αβ</button><button class="view-btn" data-view="time" data-chart="complex">Sinais no tempo</button></div><label class="trace-option"><input type="checkbox" id="complexTrace" checked> Mostrar percurso anterior</label></div>
+      <div id="complexChart" class="chart"></div>
+      <div class="metrics three">
+        <div><small>Componente α</small><strong id="alphaValue">0,000 A</strong></div>
+        <div><small>Componente β</small><strong id="betaValue">0,000 A</strong></div>
+        <div><small>Módulo do vetor</small><strong id="magnitudeValue">0,000 A</strong></div>
+      </div>
+    </article>
+
+    <article class="panel viz-panel" id="clarkePanel">
+      <div class="panel-title"><div><span class="step">03</span><div><p class="eyebrow">TRANSFORMAÇÃO abc → αβ0</p><h3>Transformada de Clarke</h3></div></div><span class="tag">Matriz ortonormal</span></div>
+      <div class="equation">
+        <div class="eq-label">i<sub>αβ0</sub> = C · i<sub>abc</sub></div>
+        <div class="matrix">√(2/3) · <span class="bracket">[ 1&nbsp;&nbsp; −1/2&nbsp;&nbsp; −1/2 ]<br>[ 0&nbsp;&nbsp; √3/2&nbsp;&nbsp; −√3/2 ]<br>[ 1/√2&nbsp;&nbsp; 1/√2&nbsp;&nbsp; 1/√2 ]</span></div>
+      </div>
+      <div class="calculation">
+        <div><small>Entrada instantânea [ia, ib, ic]ᵀ</small><strong id="clarkeInput">[0,000; 0,000; 0,000] A</strong></div>
+        <div class="calc-arrow">↓</div>
+        <div><small>Saída [iα, iβ, i0]ᵀ</small><strong id="clarkeOutput">[0,000; 0,000; 0,000] A</strong></div>
+      </div>
+      <div class="metrics three">
+        <div><small>iα</small><strong id="clarkeAlpha">0,000 A</strong></div>
+        <div><small>iβ</small><strong id="clarkeBeta">0,000 A</strong></div>
+        <div><small>i₀</small><strong id="zeroValue">0,000 A</strong></div>
+      </div>
+    </article>
+
+    <article class="panel viz-panel" id="parkPanel">
+      <div class="panel-title"><div><span class="step">04</span><div><p class="eyebrow">TRANSFORMAÇÃO αβ → dq</p><h3>Referencial rotativo de Park</h3></div></div><span class="tag">Ângulo θ</span></div>
+      <div class="chart-tools"><div class="view-switch" role="group" aria-label="Representação da transformada de Park"><button class="view-btn active" data-view="plane" data-chart="park">Plano αβ / dq</button><button class="view-btn" data-view="time" data-chart="park">Sinais no tempo</button></div><label class="trace-option"><input type="checkbox" id="parkTrace" checked> Mostrar percurso anterior</label></div>
+      <div id="parkChart" class="chart"></div>
+      <div class="equation compact-eq">
+        <div class="eq-label">i<sub>d</sub> = i<sub>α</sub> cosθ + i<sub>β</sub> sinθ</div>
+        <div class="eq-label">i<sub>q</sub> = −i<sub>α</sub> sinθ + i<sub>β</sub> cosθ</div>
+      </div>
+      <div class="metrics three">
+        <div><small>Ângulo θ</small><strong id="thetaValue">0,0°</strong></div>
+        <div><small>Componente d</small><strong id="dValue">0,000 A</strong></div>
+        <div><small>Componente q</small><strong id="qValue">0,000 A</strong></div>
+      </div>
+    </article>
+
+    <article class="panel viz-panel full" id="inversePanel">
+      <div class="panel-title"><div><span class="step">05</span><div><p class="eyebrow">RECONSTRUÇÃO</p><h3>Transformações inversas dq0 → αβ0 → abc</h3></div></div><span class="tag">Verificação numérica</span></div>
+      <div class="inverse-grid">
+        <div class="inverse-equation">
+          <p class="eyebrow">PARK INVERSA</p>
+          <div class="eq-label">i<sub>α</sub> = i<sub>d</sub> cosθ − i<sub>q</sub> sinθ</div>
+          <div class="eq-label">i<sub>β</sub> = i<sub>d</sub> sinθ + i<sub>q</sub> cosθ</div>
+          <small id="inverseAlphaBeta">[0,000; 0,000] A</small>
+        </div>
+        <div class="inverse-equation">
+          <p class="eyebrow">CLARKE INVERSA</p>
+          <div class="eq-label">i<sub>abc</sub> = Cᵀ · i<sub>αβ0</sub></div>
+          <small id="inverseABC">[0,000; 0,000; 0,000] A</small>
+        </div>
+        <div class="error-box">
+          <small>Erro máximo de reconstrução</small>
+          <strong id="errorValue">0,000000 A</strong>
+          <span class="good" id="errorStatus">✓ Transformação consistente</span>
+        </div>
+      </div>
+      <div class="metrics three">
+        <div><small>Corrente original ia</small><strong id="origA">0,000 A</strong></div>
+        <div><small>Corrente reconstruída ia</small><strong id="reconA">0,000 A</strong></div>
+        <div><small>Soma ia + ib + ic</small><strong id="sumValue">0,000 A</strong></div>
+      </div>
+    </article>
+  </section>
+
+  <section class="panel notes">
+    <p class="eyebrow">INTERPRETAÇÃO FÍSICA</p>
+    <div class="notes-grid">
+      <div><strong>Clarke</strong><p>Altera a representação das três fases para dois eixos ortogonais estacionários e uma componente homopolar.</p></div>
+      <div><strong>Park</strong><p>Roda os eixos de referência αβ para dq. As coordenadas dependem da orientação escolhida para o ângulo θ.</p></div>
+      <div><strong>O que não muda?</strong><p>O vetor físico representado não é alterado; mudam apenas as coordenadas utilizadas para o descrever.</p></div>
+    </div>
+    <p class="footnote">Modelo didático para um sistema trifásico equilibrado, peço desculpas a qualquer erro apresentado.</p>
+  </section>
+</main>
+<footer> Modelado por Brendon Faria <span> Ferramenta de Simulação para fins didáticos - UPB </span></footer>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const rad = d => d * Math.PI / 180;
+  const fmt = (v, n=3) => Number(v).toFixed(n).replace('.', ',');
+  const deg = r => ((r * 180 / Math.PI) % 360 + 360) % 360;
+  let t = 0, playing = false, last = null, raf = null;
+  let complexView='plane', parkView='plane';
+  const plotConfig = {responsive:true, displaylogo:false, scrollZoom:true, modeBarButtonsToRemove:['select2d','lasso2d']};
+  const layoutBase = {
+    paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+    font:{family:'Manrope, sans-serif',color:'#aebed0',size:10},
+    margin:{l:48,r:18,t:12,b:42},
+    xaxis:{gridcolor:'#26374c',zerolinecolor:'#53677e',title:{font:{size:10}}},
+    yaxis:{gridcolor:'#26374c',zerolinecolor:'#53677e',title:{font:{size:10}}},
+    legend:{orientation:'h',y:1.12,x:0,font:{size:10}}, hovermode:'x unified'
+  };
+  function params(){return {A:Math.max(.1,Number($('amplitude').value)||10),f:Math.max(.1,Number($('frequency').value)||50),offset:rad(Number($('offset').value)||0),duration:Number($('duration').value)||.1};}
+  function calc(time){
+    const p=params(),w=2*Math.PI*p.f,phi=w*time;
+    const ia=p.A*Math.cos(phi),ib=p.A*Math.cos(phi-2*Math.PI/3),ic=p.A*Math.cos(phi+2*Math.PI/3),k=Math.sqrt(2/3);
+    const alpha=k*(ia-.5*ib-.5*ic),beta=k*(Math.sqrt(3)/2*(ib-ic)),zero=k/Math.sqrt(2)*(ia+ib+ic);
+    const theta=phi+p.offset,d=alpha*Math.cos(theta)+beta*Math.sin(theta),q=-alpha*Math.sin(theta)+beta*Math.cos(theta);
+    const ar=d*Math.cos(theta)-q*Math.sin(theta),br=d*Math.sin(theta)+q*Math.cos(theta);
+    const ra=k*(ar+zero/Math.sqrt(2)),rb=k*(-.5*ar+Math.sqrt(3)/2*br+zero/Math.sqrt(2)),rc=k*(-.5*ar-Math.sqrt(3)/2*br+zero/Math.sqrt(2));
+    return {p,phi,ia,ib,ic,alpha,beta,zero,theta,d,q,ar,br,ra,rb,rc,mag:Math.hypot(alpha,beta)};
+  }
+  function series(from,to,n,fn){const xs=[],ys=[];for(let i=0;i<=n;i++){const x=from+(to-from)*i/n;xs.push(x);ys.push(fn(calc(x)));}return {x:xs,y:ys};}
+  function plotPhase(c){
+    const p=c.p,from=t-p.duration/2,to=t+p.duration/2;
+    const a=series(from,to,240,v=>v.ia),b=series(from,to,240,v=>v.ib),cc=series(from,to,240,v=>v.ic);
+    const traces=[{...a,name:'ia',mode:'lines',line:{color:'#52d6d0',width:2}},{...b,name:'ib',mode:'lines',line:{color:'#78a9ff',width:2}},{...cc,name:'ic',mode:'lines',line:{color:'#ffb86b',width:2}},{x:[t,t].map(x=>x*1000),y:[-p.A*1.25,p.A*1.25],mode:'lines',name:'Instante',showlegend:false,line:{color:'#f18bc2',dash:'dot',width:1.5}}];
+    traces.slice(0,3).forEach(tr=>tr.x=tr.x.map(x=>x*1000));
+    Plotly.react('phaseChart',traces,{...layoutBase,xaxis:{...layoutBase.xaxis,title:'Tempo (ms)'},yaxis:{...layoutBase.yaxis,title:'Corrente (A)',range:[-p.A*1.3,p.A*1.3]},uirevision:'phase'},plotConfig);
+  }
+  function historyTrace(key){
+    if(t<=0)return {x:[],y:[]};
+    const n= Math.min(160,Math.max(12,Math.ceil(t*params().f*20)));
+    return series(0,t,n,v=>v[key]);
+  }
+  function plotComplex(c){
+    if(complexView==='time'){
+      const p=c.p,from=t-p.duration/2,to=t+p.duration/2,a=series(from,to,240,v=>v.alpha),b=series(from,to,240,v=>v.beta);a.x=a.x.map(x=>x*1000);b.x=b.x.map(x=>x*1000);
+      Plotly.react('complexChart',[{...a,name:'iα',mode:'lines',line:{color:'#52d6d0',width:2}},{...b,name:'iβ',mode:'lines',line:{color:'#78a9ff',width:2}},{x:[t*1000,t*1000],y:[-p.A*1.6,p.A*1.6],name:'Instante',mode:'lines',showlegend:false,line:{color:'#f18bc2',dash:'dot'}}],{...layoutBase,xaxis:{...layoutBase.xaxis,title:'Tempo (ms)'},yaxis:{...layoutBase.yaxis,title:'Corrente (A)'},uirevision:'complex-time'},plotConfig);return;
+    }
+    const R=Math.max(1,c.mag*1.35),traces=[{x:[-R,R],y:[0,0],mode:'lines',hoverinfo:'skip',showlegend:false,line:{color:'#53677e',width:1}},{x:[0,0],y:[-R,R],mode:'lines',hoverinfo:'skip',showlegend:false,line:{color:'#53677e',width:1}}];
+    if($('complexTrace').checked){const h=historyTrace('alpha'),hb=historyTrace('beta');traces.push({x:h.y,y:hb.y,name:'Percurso anterior',mode:'lines',line:{color:'#8a9bad',width:1.5,dash:'dot'}});}
+    traces.push({x:[0,c.alpha],y:[0,c.beta],mode:'lines+markers',name:'Vetor iₛ',line:{color:'#52d6d0',width:4},marker:{size:[0,9],color:'#52d6d0'}},{x:[c.alpha],y:[c.beta],mode:'markers+text',text:['iₛ'],textposition:'top right',showlegend:false,marker:{size:9,color:'#f18bc2'}});
+    Plotly.react('complexChart',traces,{...layoutBase,showlegend:true,margin:{l:45,r:15,t:15,b:40},xaxis:{...layoutBase.xaxis,title:'Eixo real — α (A)',range:[-R,R],scaleanchor:'y',scaleratio:1},yaxis:{...layoutBase.yaxis,title:'Eixo imaginário — β (A)',range:[-R,R]},uirevision:'complex-plane'},plotConfig);
+  }
+  function plotPark(c){
+    if(parkView==='time'){
+      const p=c.p,from=t-p.duration/2,to=t+p.duration/2,d=series(from,to,240,v=>v.d),q=series(from,to,240,v=>v.q);d.x=d.x.map(x=>x*1000);q.x=q.x.map(x=>x*1000);
+      Plotly.react('parkChart',[{...d,name:'id',mode:'lines',line:{color:'#78a9ff',width:2}},{...q,name:'iq',mode:'lines',line:{color:'#ffb86b',width:2}},{x:[t*1000,t*1000],y:[-p.A*1.6,p.A*1.6],name:'Instante',mode:'lines',showlegend:false,line:{color:'#f18bc2',dash:'dot'}}],{...layoutBase,xaxis:{...layoutBase.xaxis,title:'Tempo (ms)'},yaxis:{...layoutBase.yaxis,title:'Corrente (A)'},uirevision:'park-time'},plotConfig);return;
+    }
+    const R=Math.max(1,c.mag*1.45),co=Math.cos(c.theta),si=Math.sin(c.theta),dx=co*R,dy=si*R,qx=-si*R,qy=co*R;
+    const traces=[{x:[-R,R],y:[0,0],mode:'lines',showlegend:false,hoverinfo:'skip',line:{color:'#53677e',width:1}},{x:[0,0],y:[-R,R],mode:'lines',showlegend:false,hoverinfo:'skip',line:{color:'#53677e',width:1}},{x:[-dx,dx],y:[-dy,dy],mode:'lines',name:'Eixo d móvel',line:{color:'#78a9ff',width:2,dash:'dash'}},{x:[-qx,qx],y:[-qy,qy],mode:'lines',name:'Eixo q móvel',line:{color:'#ffb86b',width:2,dash:'dash'}}];
+    if($('parkTrace').checked){const h=historyTrace('alpha'),hb=historyTrace('beta');traces.push({x:h.y,y:hb.y,name:'Percurso anterior',mode:'lines',line:{color:'#8a9bad',width:1.5,dash:'dot'}});}
+    traces.push({x:[0,c.alpha],y:[0,c.beta],mode:'lines+markers',name:'Vetor iₛ',line:{color:'#52d6d0',width:4},marker:{size:[0,8]}},{x:[c.alpha,c.alpha],y:[c.beta,0],mode:'lines',name:'Projeção em α',line:{color:'#f18bc2',dash:'dot'},showlegend:false},{x:[c.alpha,co*c.d],y:[c.beta,si*c.d],mode:'lines',name:'Componente d',line:{color:'#78a9ff',dash:'dot'},showlegend:false},{x:[co*c.d, c.alpha],y:[si*c.d,c.beta],mode:'lines',name:'Componente q',line:{color:'#ffb86b',dash:'dot'},showlegend:false},{x:[c.alpha],y:[c.beta],mode:'markers+text',text:['iₛ'],textposition:'top right',showlegend:false,marker:{size:8,color:'#52d6d0'}},{x:[dx*.72],y:[dy*.72],mode:'text',text:['d'],showlegend:false,textfont:{color:'#78a9ff',size:13}},{x:[qx*.72],y:[qy*.72],mode:'text',text:['q'],showlegend:false,textfont:{color:'#ffb86b',size:13}});
+    Plotly.react('parkChart',traces,{...layoutBase,margin:{l:45,r:15,t:15,b:40},xaxis:{...layoutBase.xaxis,title:'Eixo α (A)',range:[-R,R],scaleanchor:'y',scaleratio:1},yaxis:{...layoutBase.yaxis,title:'Eixo β (A)',range:[-R,R]},uirevision:'park-plane'},plotConfig);
+  }
+  function update(){
+    const c=calc(t),p=c.p,err=Math.max(Math.abs(c.ia-c.ra),Math.abs(c.ib-c.rb),Math.abs(c.ic-c.rc));
+    $('angleReadout').textContent=fmt(deg(c.phi),1)+'°';$('timeReadout').textContent=fmt(t,4)+' s';
+    $('iaValue').textContent=fmt(c.ia)+' A';$('ibValue').textContent=fmt(c.ib)+' A';$('icValue').textContent=fmt(c.ic)+' A';$('alphaValue').textContent=fmt(c.alpha)+' A';$('betaValue').textContent=fmt(c.beta)+' A';$('magnitudeValue').textContent=fmt(c.mag)+' A';
+    $('clarkeInput').textContent=`[${fmt(c.ia)}; ${fmt(c.ib)}; ${fmt(c.ic)}] A`;$('clarkeOutput').textContent=`[${fmt(c.alpha)}; ${fmt(c.beta)}; ${fmt(c.zero)}] A`;$('clarkeAlpha').textContent=fmt(c.alpha)+' A';$('clarkeBeta').textContent=fmt(c.beta)+' A';$('zeroValue').textContent=fmt(c.zero)+' A';
+    $('thetaValue').textContent=fmt(deg(c.theta),1)+'°';$('dValue').textContent=fmt(c.d)+' A';$('qValue').textContent=fmt(c.q)+' A';$('inverseAlphaBeta').textContent=`[${fmt(c.ar)}; ${fmt(c.br)}] A`;$('inverseABC').textContent=`[${fmt(c.ra)}; ${fmt(c.rb)}; ${fmt(c.rc)}] A`;
+    $('errorValue').textContent=err.toExponential(3).replace('.',',')+' A';$('errorStatus').textContent=err<1e-9?'✓ Transformação consistente':'Verificar reconstrução';$('errorStatus').className=err<1e-9?'good':'';
+    $('origA').textContent=fmt(c.ia)+' A';$('reconA').textContent=fmt(c.ra)+' A';$('sumValue').textContent=fmt(c.ia+c.ib+c.ic)+' A';
+    const maxTime=Math.max(p.duration*4,1/p.f*4);$('timeSlider').max=maxTime;$('timeSlider').value=Math.min(t,maxTime);$('endTime').textContent=fmt(maxTime,3)+' s';if($('startTime'))$('startTime').textContent='0,000 s';
+    plotPhase(c);plotComplex(c);plotPark(c);
+  }
+  function setPlaying(v){playing=v;$('status').textContent=v?'A REPRODUZIR':'PAUSADA';$('playBtn').textContent=v?'▶ A reproduzir':'▶ Reproduzir';if(v){last=null;raf=requestAnimationFrame(tick)}else if(raf)cancelAnimationFrame(raf);}
+  function tick(now){if(!playing)return;if(last!==null){const speed=Number($('speed').value)||1;t+=(now-last)/1000*speed;if(t>Number($('timeSlider').max))t=0;update();}last=now;raf=requestAnimationFrame(tick);}
+  function step(dir){setPlaying(false);t=Math.max(0,t+dir/(params().f*60));update();}
+  $('playBtn').addEventListener('click',()=>setPlaying(true));$('pauseBtn').addEventListener('click',()=>setPlaying(false));$('backBtn').addEventListener('click',()=>step(-1));$('forwardBtn').addEventListener('click',()=>step(1));$('resetBtn').addEventListener('click',()=>{setPlaying(false);t=0;update();});
+  $('timeSlider').addEventListener('input',e=>{setPlaying(false);t=Number(e.target.value);update();});
+  ['amplitude','frequency','offset','duration'].forEach(id=>$(id).addEventListener('input',()=>{if(id==='offset')$('offsetValue').textContent=$('offset').value+'°';update();}));
+  document.querySelectorAll('.view-btn').forEach(btn=>btn.addEventListener('click',()=>{const chart=btn.dataset.chart,view=btn.dataset.view;if(chart==='complex')complexView=view;else parkView=view;document.querySelectorAll(`.view-btn[data-chart="${chart}"]`).forEach(b=>b.classList.toggle('active',b===btn));update();}));
+  ['complexTrace','parkTrace'].forEach(id=>$(id).addEventListener('change',update));
+  document.querySelectorAll('.panel-toggle').forEach(box=>box.addEventListener('change',()=>{$(box.dataset.target).style.display=box.checked?'':'none';setTimeout(()=>['phaseChart','complexChart','parkChart'].forEach(id=>{const el=$(id);if(el&&el.offsetParent)Plotly.Plots.resize(el)}),50);}));
+  $('selectAll').addEventListener('click',()=>document.querySelectorAll('.panel-toggle').forEach(b=>{b.checked=true;$(b.dataset.target).style.display='';}));$('selectNone').addEventListener('click',()=>document.querySelectorAll('.panel-toggle').forEach(b=>{b.checked=false;$(b.dataset.target).style.display='none';}));
+  window.addEventListener('resize',()=>['phaseChart','complexChart','parkChart'].forEach(id=>{if($(id))Plotly.Plots.resize($(id));}));update();
+})();
+
+</script>
+</body>
+</html>
